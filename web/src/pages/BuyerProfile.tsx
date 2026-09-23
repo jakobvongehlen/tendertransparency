@@ -7,7 +7,7 @@ import { Chart, axisCat, axisVal, base, useTokens } from '../components/Chart'
 import { Network } from '../components/Network'
 import { CellDrilldown } from '../components/CellDrilldown'
 import {
-  Comparability, FewBiddersBadge, Loading, NoticeLink, Panel, PeerBar, PeerLegend, ProcedureLink, Seg, Stats, SupplierLink, Table, UnusualBadge,
+  Comparability, DIRECT_AWARD_TIP, FewBiddersBadge, Loading, NoticeLink, Panel, PeerBar, PeerLegend, ProcedureLink, Seg, Stats, SupplierLink, Table, UnusualBadge,
 } from '../components/ui'
 
 export default function BuyerProfile() {
@@ -98,7 +98,7 @@ export default function BuyerProfile() {
               render: (r) => (r.n_bid_lots ?? 0) >= 3 ? <PeerBar value={r.single_bid_rate} median={r.peer_median_single_bid} p75={r.peer_p75_single_bid} /> : <span className="muted small">fewer than 3 lots</span>,
               sort: (r) => ((r.n_bid_lots ?? 0) >= 3 ? r.single_bid_rate : null) },
             { key: 'avg_bids', label: 'Tenders per lot', num: true, render: (r) => <>{r.avg_bids != null ? r.avg_bids.toFixed(1) : '–'}{r.peer_median_avg_bids != null && <span className="sub">peers {r.peer_median_avg_bids.toFixed(1)}</span>}</> },
-            { key: 'direct_share', label: 'No prior publication', num: true, render: (r) => <>{pct(r.direct_share)}{r.peer_median_direct_share != null && <span className="sub">peers {pct(r.peer_median_direct_share)}</span>}</> },
+            { key: 'direct_share', label: 'Direct award', num: true, title: DIRECT_AWARD_TIP, render: (r) => <>{pct(r.direct_share)}{r.peer_median_direct_share != null && <span className="sub">peers {pct(r.peer_median_direct_share)}</span>}</> },
             { key: 'few_bidders', label: 'Flags', render: (r) => <div className="row">{r.few_bidders && <FewBiddersBadge />}{r.unusual && <UnusualBadge persistent={r.persistent_periods} />}</div>,
               sort: (r) => (r.few_bidders ? 0 : 2) + (r.unusual ? 0 : 1) },
             { key: 'go', label: '', render: (r) => <Link to={`/compare?division=${r.division}&kind=${encodeURIComponent(b.kind)}&period=${period === 'all' ? '2022-2024' : period}&metric=single&buyer=${encodeURIComponent(b.buyer_id)}`}>Peers</Link> },

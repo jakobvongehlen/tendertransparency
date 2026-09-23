@@ -5,7 +5,7 @@ import { getJSON, useApi, type Row } from '../api'
 import { useMeta } from '../App'
 import { bandLabel, lots, num, pct } from '../format'
 import { Chart, base, useTokens } from '../components/Chart'
-import { Comparability, FewBiddersBadge, Loading, Panel, Table, UnusualBadge } from '../components/ui'
+import { Comparability, DIRECT_AWARD_TIP, FewBiddersBadge, Loading, Panel, Table, UnusualBadge } from '../components/ui'
 
 type Metric = {
   key: string
@@ -24,7 +24,7 @@ const METRICS: Metric[] = [
     fmt: (v) => pct(v), enough: (r) => r.n_bid_lots >= 5, sample: (r) => `${num(r.n_bid_lots)} lots with a known count` },
   { key: 'avg_bids', label: 'Tenders per lot', note: 'Average number of tenders received per competitive lot (at most 20 counted per lot).',
     fmt: (v) => v.toFixed(1), enough: (r) => r.n_bid_lots >= 5, sample: (r) => `${num(r.n_bid_lots)} lots with a known count` },
-  { key: 'direct_share', label: 'Awarded without prior publication', note: 'Share of awarded lots from negotiated procedures without prior publication.',
+  { key: 'direct_share', label: 'Direct awards (no call for competition)', note: 'Share of awarded lots given directly: the buyer negotiated with companies of its choosing without publishing a contract notice.',
     fmt: (v) => pct(v), enough: (r) => r.n_lots >= 5, sample: (r) => `${num(r.n_lots)} awarded lots` },
   { key: 'top_share', label: 'Share of top supplier', note: 'Share of awarded lots won by the most frequent supplier in the chosen category.', divisionOnly: true,
     fmt: (v) => pct(v), enough: (r) => r.conc_lots >= 5, sample: (r) => `${lots(r.conc_lots)} awarded lots, ${num(r.n_suppliers)} suppliers` },
@@ -162,7 +162,7 @@ export default function MapPage() {
                 <dt>Awarded lots</dt><dd>{num(sel.n_lots)}</dd>
                 <dt>Single tender</dt><dd>{sel.n_bid_lots >= 5 ? pct(sel.single_bid_rate) : '–'}{sel.n_bid_lots >= 5 && sel.peer_median_single_bid != null && <span className="muted"> · peers {pct(sel.peer_median_single_bid)}</span>}</dd>
                 <dt>Tenders per lot</dt><dd>{sel.n_bid_lots >= 5 ? sel.avg_bids?.toFixed(1) : '–'}</dd>
-                <dt>No prior publication</dt><dd>{pct(sel.direct_share)}</dd>
+                <dt title={DIRECT_AWARD_TIP}>Direct awards</dt><dd>{pct(sel.direct_share)}</dd>
                 <dt>Local suppliers</dt><dd>{pct(sel.local_share)}</dd>
                 <dt>No award found</dt><dd>{pct(sel.no_award_rate)}</dd>
                 {division

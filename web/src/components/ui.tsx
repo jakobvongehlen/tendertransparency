@@ -77,6 +77,16 @@ export function UnusualBadge({ persistent }: { persistent?: number | null }) {
   )
 }
 
+/** Shared explanation wherever direct awards are shown. */
+export const DIRECT_AWARD_TIP =
+  'Direct award: the buyer published no contract notice and negotiated with one or a few companies it chose itself ' +
+  '(negotiated procedure without prior publication). Allowed only on specific grounds, such as only one possible supplier, ' +
+  'extreme urgency or no suitable tenders in an earlier open procedure. Only direct awards reported afterwards on TenderNed are visible.'
+
+export function DirectAwardTag() {
+  return <span className="tag warn" title={DIRECT_AWARD_TIP}>direct award</span>
+}
+
 export function FewBiddersBadge() {
   return (
     <span className="badge few" title="Half or more of the competitive lots drew a single tender, well above comparable buyers">

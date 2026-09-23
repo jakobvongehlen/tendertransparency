@@ -5,7 +5,7 @@ import { useMeta } from '../App'
 import { eur, lots, num, pct } from '../format'
 import { Chart, axisCat, axisVal, base, useTokens } from './Chart'
 import {
-  Comparability, FewBiddersBadge, Loading, NoticeLink, PeerBar, ProcedureLink, Seg, Stats, SupplierLink, Table, UnusualBadge,
+  Comparability, DirectAwardTag, FewBiddersBadge, Loading, NoticeLink, PeerBar, ProcedureLink, Seg, Stats, SupplierLink, Table, UnusualBadge,
 } from './ui'
 
 type LotFilter = 'all' | 'supplier' | 'single' | 'nopub'
@@ -28,7 +28,7 @@ function observations(d: Row): ReactNode[] {
   }
   const how: string[] = []
   if (top.bid_lots > 0) how.push(`${top.single_bid_lots} of ${top.bid_lots} competitive lots with a known count drew a single tender`)
-  if (top.no_publication_lots > 0) how.push(`${top.no_publication_lots} awarded without prior publication`)
+  if (top.no_publication_lots > 0) how.push(`${top.no_publication_lots} awarded directly, without a call for competition`)
   if (top.framework_lots > 0) how.push(`${top.framework_lots} under a framework agreement or shared with other winners`)
   if (how.length) out.push(<>For {top.name}: {how.join('; ')}.</>)
   if (s.persistent_periods >= 2) out.push(<>The same supplier held at least half the lots in <b>{s.persistent_periods} three-year periods</b>.</>)
@@ -141,10 +141,10 @@ export function CellDrilldown({ buyerId, division, period, onClose, showBuyer = 
             { key: 'name', label: 'Supplier', render: (r) => <><SupplierLink id={r.supplier_key} name={r.name} /><span className="sub">{[r.locality, r.first_year === r.last_year ? r.first_year : `${r.first_year}–${r.last_year}`].filter(Boolean).join(' · ')}</span></> },
             { key: 'lots', label: 'Lots', num: true, render: (r) => <>{lots(r.lots)}<span className="sub">{pct(r.share)}</span></> },
             { key: 'procedures', label: 'Procedures', num: true },
-            { key: 'single_bid_lots', label: 'How won', title: 'Single tender · without prior publication · framework or shared lot',
+            { key: 'single_bid_lots', label: 'How won', title: 'Single tender · direct award (no call for competition) · framework or shared lot',
               render: (r) => <span className="small">{[
                 r.single_bid_lots ? `${r.single_bid_lots} single tender` : null,
-                r.no_publication_lots ? `${r.no_publication_lots} no publication` : null,
+                r.no_publication_lots ? `${r.no_publication_lots} direct award` : null,
                 r.framework_lots ? `${r.framework_lots} framework` : null,
               ].filter(Boolean).join(' · ') || <span className="muted">competed</span>}</span> },
             { key: 'show', label: '', render: (r) => <button className="link small nowrap" onClick={() => pickSupplier(r.supplier_key)}>Show lots</button> },
@@ -163,7 +163,7 @@ export function CellDrilldown({ buyerId, division, period, onClose, showBuyer = 
             { value: 'all', label: `All ${all.length}` },
             ...(supplier ? [{ value: 'supplier' as const, label: supName ?? 'Supplier' }] : []),
             ...(nSingle ? [{ value: 'single' as const, label: `Single tender ${nSingle}` }] : []),
-            ...(nNopub ? [{ value: 'nopub' as const, label: `No prior publication ${nNopub}` }] : []),
+            ...(nNopub ? [{ value: 'nopub' as const, label: `Direct award ${nNopub}` }] : []),
           ]} />
         </div>
         <Table rows={shownLots} limit={15} rowKey={(r) => `${r.ocid}-${r.lot_id}-${r.supplier_key}`} cols={[
@@ -173,7 +173,7 @@ export function CellDrilldown({ buyerId, division, period, onClose, showBuyer = 
           { key: 'n_bids', label: 'How competed', sort: (r) => (r.no_publication ? -1 : r.n_bids),
             render: (r) => <>
               <span className="row" style={{ gap: 4 }}>
-                {r.no_publication ? <span className="tag warn">no prior publication</span>
+                {r.no_publication ? <DirectAwardTag />
                   : r.n_bids === 1 ? <span className="tag warn">1 tender</span>
                     : r.n_bids ? <span className="tag">{r.n_bids} tenders</span> : <span className="tag muted">tenders unknown</span>}
                 {r.framework && <span className="tag">framework</span>}

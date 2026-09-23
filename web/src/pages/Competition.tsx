@@ -3,7 +3,7 @@ import { useApi, type Row } from '../api'
 import { useMeta } from '../App'
 import { bandLabel, num, pct } from '../format'
 import { Chart, axisCat, axisVal, base, useTokens } from '../components/Chart'
-import { BuyerLink, FewBiddersBadge, Loading, Panel, PeerBar, PeerLegend, Stats, Table, UnusualBadge } from '../components/ui'
+import { DIRECT_AWARD_TIP, BuyerLink, FewBiddersBadge, Loading, Panel, PeerBar, PeerLegend, Stats, Table, UnusualBadge } from '../components/ui'
 
 const avg = (v: number | null | undefined) => (v === null || v === undefined ? '–' : v.toFixed(1))
 
@@ -32,12 +32,12 @@ export default function Competition() {
     legend: { top: 0, left: 0, icon: 'roundRect', itemWidth: 12, itemHeight: 3, textStyle: { color: t.ink2 } },
     grid: { ...(base(t).grid as object), top: 36, right: 40 },
     tooltip: { ...(base(t).tooltip as object), trigger: 'axis',
-      formatter: (p: any) => { const r = years[p[0].dataIndex]; return `<b>${r.year}</b><br/>Single tender: ${pct(r.single_bid_rate, 1)} of ${num(r.bid_lots)} lots with a known count<br/>Without prior publication: ${pct(r.direct_share, 1)} of ${num(r.lots)} lots<br/>Tender count known for ${pct(r.bid_coverage)} of competitive lots` } },
+      formatter: (p: any) => { const r = years[p[0].dataIndex]; return `<b>${r.year}</b><br/>Single tender: ${pct(r.single_bid_rate, 1)} of ${num(r.bid_lots)} lots with a known count<br/>Direct awards: ${pct(r.direct_share, 1)} of ${num(r.lots)} lots<br/>Tender count known for ${pct(r.bid_coverage)} of competitive lots` } },
     xAxis: { type: 'category', data: years.map((r) => r.year), ...axisCat(t) },
     yAxis: { type: 'value', min: 0, ...axisVal(t), axisLabel: { color: t.muted, formatter: (v: number) => pct(v) } },
     series: [
       { name: 'Lots with a single tender', data: years.map((r) => r.single_bid_rate), color: t.s1 },
-      { name: 'Lots awarded without prior publication', data: years.map((r) => r.direct_share), color: t.s2 },
+      { name: 'Lots awarded directly (no call for competition)', data: years.map((r) => r.direct_share), color: t.s2 },
     ].map((x) => ({
       ...x, type: 'line', symbol: 'circle', symbolSize: 7, lineStyle: { width: 2, color: x.color },
       itemStyle: { color: x.color, borderColor: t.surface, borderWidth: 2 },
@@ -64,7 +64,7 @@ export default function Competition() {
     { key: 'lots', label: 'Awarded lots', num: true, render: (r: Row) => num(r.lots) },
     { key: 'single_bid_rate', label: 'Single tender', num: true, title: 'Share of competitive lots with a known tender count that received one tender', render: (r: Row) => pct(r.single_bid_rate, 1) },
     { key: 'avg_bids', label: 'Tenders per lot', num: true, title: 'Average, counting at most 20 per lot', render: (r: Row) => <>{avg(r.avg_bids)}<span className="sub">median {num(r.median_bids)}</span></> },
-    { key: 'direct_share', label: 'No prior publication', num: true, title: 'Share of awarded lots from a negotiated procedure without prior publication', render: (r: Row) => pct(r.direct_share, 1) },
+    { key: 'direct_share', label: 'Direct award', num: true, title: DIRECT_AWARD_TIP, render: (r: Row) => pct(r.direct_share, 1) },
     { key: 'bid_coverage', label: 'Count known', num: true, title: 'Share of competitive lots with a reported tender count', render: (r: Row) => pct(r.bid_coverage) },
   ]
 
@@ -74,7 +74,7 @@ export default function Competition() {
         <h1>How much competition is there?</h1>
         <p className="lede">
           Concentration shows who wins; this page shows how many firms competed. A lot that draws only one tender gives the buyer
-          no real choice, and a procedure without prior publication invites no open competition at all. Both have ordinary causes:
+          no real choice, and a direct award, where the buyer negotiates with a company of its choosing without announcing the contract, involves no open competition at all. Both have ordinary causes:
           niche markets, urgent work, follow-up assignments. Compare with similar buyers before drawing conclusions.
         </p>
       </div>
@@ -102,7 +102,7 @@ export default function Competition() {
       <Stats items={[
         { label: 'Lots with a single tender', value: pct(s.single_bid_rate, 1), note: `of ${num(s.bid_lots)} competitive lots with a known count` },
         { label: 'Tenders per lot', value: avg(s.avg_bids), note: `median ${num(s.median_bids)}` },
-        { label: 'Without prior publication', value: pct(s.direct_share, 1), note: `of ${num(s.lots)} awarded lots` },
+        { label: 'Direct awards', value: pct(s.direct_share, 1), note: <span title={DIRECT_AWARD_TIP}>of {num(s.lots)} awarded lots, no call for competition</span> },
         { label: 'Tender count known', value: pct(s.bid_coverage), note: 'of competitive lots' },
         { label: 'Flagged: few bidders', value: num(data.n_flagged), note: division ? 'buyers in this category' : 'buyers, all categories together' },
       ]} />
@@ -131,7 +131,7 @@ export default function Competition() {
           { key: 'single_bid_rate', label: 'Single tender vs peers', render: (r) => <PeerBar value={r.single_bid_rate} median={r.peer_median_single_bid} p75={r.peer_p75_single_bid} />,
             sort: (r) => r.single_bid_rate - (r.peer_median_single_bid ?? 0) },
           { key: 'avg_bids', label: 'Tenders per lot', num: true, render: (r) => <>{avg(r.avg_bids)}{r.peer_median_avg_bids != null && <span className="sub">peers {avg(r.peer_median_avg_bids)}</span>}</> },
-          { key: 'direct_share', label: 'No prior publication', num: true, render: (r) => <>{pct(r.direct_share)}{r.peer_median_direct_share != null && <span className="sub">peers {pct(r.peer_median_direct_share)}</span>}</> },
+          { key: 'direct_share', label: 'Direct award', num: true, title: DIRECT_AWARD_TIP, render: (r) => <>{pct(r.direct_share)}{r.peer_median_direct_share != null && <span className="sub">peers {pct(r.peer_median_direct_share)}</span>}</> },
           { key: 'n_bid_peers', label: 'Peers', num: true },
           { key: 'few_bidders', label: 'Flags', render: (r) => <div className="row">{r.few_bidders && <FewBiddersBadge />}{r.unusual && <UnusualBadge />}</div>,
             sort: (r) => (r.few_bidders ? 0 : 2) + (r.unusual ? 0 : 1) },

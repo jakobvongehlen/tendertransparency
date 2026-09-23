@@ -5,7 +5,7 @@ import { useMeta } from '../App'
 import { bandLabel, eur, lots, num, pct } from '../format'
 import { Chart, axisVal, base, useTokens } from '../components/Chart'
 import { CellDrilldown } from '../components/CellDrilldown'
-import { BuyerLink, Comparability, FewBiddersBadge, Loading, Panel, PeerBar, Seg, Stats, SupplierLink, Table, UnusualBadge } from '../components/ui'
+import { DIRECT_AWARD_TIP, BuyerLink, Comparability, FewBiddersBadge, Loading, Panel, PeerBar, Seg, Stats, SupplierLink, Table, UnusualBadge } from '../components/ui'
 
 export default function Compare() {
   const meta = useMeta()
@@ -174,7 +174,7 @@ export default function Compare() {
                   sort: (r: Row) => ((r.n_bid_lots ?? 0) > 0 ? r.single_bid_rate : null) },
                 { key: 'n_bid_lots', label: 'Lots with count', num: true, render: (r: Row) => <>{num(r.n_bid_lots)}<span className="sub">{num(r.n_single)} single</span></> },
                 { key: 'avg_bids', label: 'Tenders per lot', num: true, render: (r: Row) => (r.avg_bids != null ? r.avg_bids.toFixed(1) : '–') },
-                { key: 'direct_share', label: 'No prior publication', num: true, render: (r: Row) => pct(r.direct_share) },
+                { key: 'direct_share', label: 'Direct award', num: true, title: DIRECT_AWARD_TIP, render: (r: Row) => pct(r.direct_share) },
               ] : [
                 { key: 'top_share', label: 'Top-supplier share', render: (r: Row) => <PeerBar value={r.top_share} median={data.summary.median_top_share} /> },
                 { key: 'top_supplier_name', label: 'Top supplier', render: (r: Row) => r.top_supplier ? <SupplierLink id={r.top_supplier} name={r.top_supplier_name} /> : '–' },
