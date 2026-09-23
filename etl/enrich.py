@@ -1,5 +1,6 @@
 """Enrich buyers/suppliers with municipality, province and coordinates (PDOK
-Locatieserver) and municipalities with population (CBS StatLine 03759ned).
+Locatieserver), municipalities with population (CBS StatLine 03759ned), and fetch
+generalised municipal boundaries for the map (CBS/PDOK gebiedsindelingen).
 
 Lookups are cached in data/cache so re-runs only hit the network for new values.
 """
@@ -20,6 +21,11 @@ CACHE = ROOT / "data" / "cache"
 PDOK = "https://api.pdok.nl/bzk/locatieserver/search/v3_1/free"
 CBS = "https://opendata.cbs.nl/ODataApi/odata/03759ned/TypedDataSet"
 FIELDS = "gemeentenaam,gemeentecode,provincienaam,centroide_ll"
+BOUNDARY_YEAR = 2026
+BOUNDARIES = (
+    f"https://service.pdok.nl/cbs/gebiedsindelingen/{BOUNDARY_YEAR}/wfs/v1_0?request=GetFeature&service=WFS"
+    "&version=2.0.0&typeName=gemeente_gegeneraliseerd&outputFormat=json&srsName=EPSG:4326"
+)
 
 
 def get_json(url):
@@ -71,6 +77,34 @@ def cached(name, keys, fn, workers=8):
                 print(f"  {i + 1}/{len(todo)}")
     path.write_text(json.dumps(cache))
     return cache
+
+
+def boundaries():
+    """Municipal boundaries as small GeoJSON: coordinates rounded to ~10 m, repeated points dropped."""
+    path = CACHE / f"municipalities_{BOUNDARY_YEAR}.geojson"
+    if path.exists():
+        return
+
+    def ring(pts):
+        out = []
+        for x, y in pts:
+            p = [round(x, 4), round(y, 4)]
+            if not out or out[-1] != p:
+                out.append(p)
+        return out if len(out) >= 4 else None
+
+    features = []
+    for f in get_json(BOUNDARIES)["features"]:
+        g = f["geometry"]
+        polys = g["coordinates"] if g["type"] == "MultiPolygon" else [g["coordinates"]]
+        polys = [[r for r in map(ring, poly) if r] for poly in polys]
+        features.append(dict(
+            type="Feature",
+            properties=dict(code=f["properties"]["statcode"], name=f["properties"]["statnaam"]),
+            geometry=dict(type="MultiPolygon", coordinates=[p for p in polys if p]),
+        ))
+    path.write_text(json.dumps(dict(type="FeatureCollection", features=features), separators=(",", ":")))
+    print("boundaries", len(features), f"{path.stat().st_size / 1e6:.1f} MB")
 
 
 def main():
@@ -126,6 +160,7 @@ def main():
     tbl = pa.Table.from_pylist(pop)  # noqa: F841
     con.execute("CREATE OR REPLACE TABLE population AS SELECT * FROM tbl")
     print("geo", len(rows), "population rows", len(pop))
+    boundaries()
 
 
 if __name__ == "__main__":

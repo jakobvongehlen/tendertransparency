@@ -3,9 +3,9 @@ import ReactECharts from 'echarts-for-react'
 import type { EChartsOption } from 'echarts'
 
 export type Tokens = Record<
-  'surface' | 'ink' | 'ink2' | 'muted' | 'hair' | 'axis' | 's1' | 's2' | 's3' | 's4' | 'serious' | 'peer',
+  'surface' | 'ink' | 'ink2' | 'muted' | 'hair' | 'axis' | 's1' | 's2' | 's3' | 's4' | 'serious' | 'peer' | 'empty',
   string
->
+> & { seq: string[] }
 
 function readTokens(): Tokens {
   const cs = getComputedStyle(document.documentElement)
@@ -13,7 +13,8 @@ function readTokens(): Tokens {
   return {
     surface: v('--surface'), ink: v('--ink'), ink2: v('--ink-2'), muted: v('--muted'), hair: v('--hair'),
     axis: v('--axis'), s1: v('--series-1'), s2: v('--series-2'), s3: v('--series-3'), s4: v('--series-4'),
-    serious: v('--serious'), peer: v('--peer-band'),
+    serious: v('--serious'), peer: v('--peer-band'), empty: v('--map-empty'),
+    seq: [1, 2, 3, 4, 5].map((i) => v(`--seq-${i}`)),
   }
 }
 

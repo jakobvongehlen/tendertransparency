@@ -77,6 +77,14 @@ export function UnusualBadge({ persistent }: { persistent?: number | null }) {
   )
 }
 
+export function FewBiddersBadge() {
+  return (
+    <span className="badge few" title="Half or more of the competitive lots drew a single tender, well above comparable buyers">
+      <i />few bidders
+    </span>
+  )
+}
+
 /**
  * Peer context bar: the buyer's value (dot) against the peer median (tick) and
  * the peer interquartile-ish band (median → p75 when known). Scale is 0–100%.

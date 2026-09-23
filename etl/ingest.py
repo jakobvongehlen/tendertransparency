@@ -139,16 +139,19 @@ def rows_for(release, notices, buyers, suppliers, lots, bids, awards):
             dict(notice_id=nid, ocid=ocid, lot_id=lid, title=lot.get("title"), cpv=lot_cpv.get(lid) or cls.get("id"))
         )
 
+    # before eForms (late 2023) statistics carry no lot reference: they are procedure totals
     stats = {}
     for s in (r.get("bids") or {}).get("statistics", []):
         lid = str(s.get("relatedLot") or "1")
-        stats.setdefault(lid, {})[s["measure"]] = num(s.get("value"))
+        st = stats.setdefault(lid, {"lot_level": s.get("relatedLot") is not None})
+        st[s["measure"]] = num(s.get("value"))
     for lid, s in stats.items():
         bids.append(
             dict(
                 notice_id=nid,
                 ocid=ocid,
                 lot_id=lid,
+                lot_level=s["lot_level"],
                 requests=s.get("requests"),
                 bids=s.get("electronicBids"),
                 complaints=s.get("complaints"),

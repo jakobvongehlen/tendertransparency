@@ -308,7 +308,7 @@ WITH names AS (
   SELECT supplier_key, bool_or(sme) AS sme FROM suppliers_raw GROUP BY 1
 )
 SELECT n.supplier_key, n.name, n.kvk, a.locality, a.postal_code, coalesce(a.country, 'Nederland') AS country,
-  coalesce(s.sme, false) AS sme, g.municipality, g.province, g.lat, g.lon
+  coalesce(s.sme, false) AS sme, g.municipality, g.municipality_code, g.province, g.lat, g.lon
 FROM names n
 LEFT JOIN addr a USING (supplier_key)
 LEFT JOIN sme s USING (supplier_key)
@@ -428,6 +428,113 @@ SELECT s.*, coalesce(p.n_periods, 1) AS persistent_periods,
      AND s.top_share >= s.peer_median_top_share + 0.2) AS unusual
 FROM peer_scores s
 LEFT JOIN persistence p ON p.buyer_id = s.buyer_id AND p.division = s.division AND p.top_supplier = s.top_supplier;
+
+-- ---------------------------------------------------------------- competition
+-- Tenders received per awarded lot. TenderNed reports "requests" (tenders received) and
+-- "electronicBids"; they agree for 97% of lots and "requests" is filled more often.
+-- Zero on an awarded lot means not reported.
+-- Some imported staffing platforms report "1 tender" on nearly every award without an
+-- electronic count: a default rather than a count, so their figures are treated as unknown.
+-- Judged per platform and year, as some platforms switched to the default at some point.
+CREATE OR REPLACE TABLE platform_bid_quality AS
+SELECT n.platform, year(n.published::DATE) AS year, count(*) AS n_award_notices,
+  avg((b.requests = 1 AND b.bids IS NULL)::INT) AS default_one_share,
+  count(*) >= 20 AND avg((b.requests = 1 AND b.bids IS NULL)::INT) >= 0.75 AS unreliable
+FROM bids b JOIN notices n USING (notice_id) WHERE n.notice_type = 'AGO' GROUP BY ALL;
+
+CREATE OR REPLACE TABLE lot_competition AS
+WITH l AS (
+  SELECT ocid, lot_id, any_value(buyer_id) AS buyer_id, min(year) AS year, any_value(division) AS division,
+    any_value(procedure) AS procedure, max(n_lot_suppliers) AS n_winners,
+    count(*) OVER (PARTITION BY ocid) AS n_proc_lots
+  FROM awards GROUP BY ocid, lot_id
+), s AS (
+  SELECT b.ocid, b.lot_id, b.lot_level, b.notice_id, coalesce(nullif(b.requests, 0), nullif(b.bids, 0)) AS n
+  FROM bids b JOIN notices n USING (notice_id)
+  WHERE NOT EXISTS (SELECT 1 FROM platform_bid_quality q
+                    WHERE q.unreliable AND q.platform = n.platform AND q.year = year(n.published::DATE))
+), per_lot AS (
+  SELECT ocid, lot_id, arg_max(n, notice_id) AS n_bids FROM s WHERE lot_level AND n IS NOT NULL GROUP BY ALL
+), per_proc AS (
+  SELECT ocid, arg_max(n, notice_id) AS n_bids FROM s WHERE NOT lot_level AND n IS NOT NULL GROUP BY ALL
+)
+SELECT l.* EXCLUDE (n_proc_lots),
+  -- a procedure total only says something about a lot if there is one lot, or one tender in total
+  coalesce(pl.n_bids, CASE WHEN l.n_proc_lots = 1 OR pp.n_bids = 1 THEN pp.n_bids END) AS n_bids,
+  coalesce(l.procedure ILIKE '%zonder%', false) AS no_publication
+FROM l LEFT JOIN per_lot pl USING (ocid, lot_id) LEFT JOIN per_proc pp USING (ocid);
+
+-- one row per buyer x CPV division x period, plus division '*' for all categories together
+CREATE OR REPLACE TABLE competition AS
+WITH per AS (
+  SELECT period, y0, y1 FROM periods UNION ALL SELECT 'all', 2000, 2100
+), lp AS (
+  SELECT l.buyer_id, coalesce(l.division, '?') AS div, p.period, l.no_publication, l.n_bids
+  FROM lot_competition l JOIN per p ON l.year BETWEEN p.y0 AND p.y1
+), comp AS (
+  SELECT buyer_id, period, CASE WHEN grouping(div) = 1 THEN '*' ELSE div END AS division,
+    count(*) AS n_lots,
+    count(*) FILTER (no_publication) AS n_direct,
+    count(*) FILTER (NOT no_publication AND n_bids IS NOT NULL) AS n_bid_lots,
+    count(*) FILTER (NOT no_publication AND n_bids = 1) AS n_single,
+    -- capped: a few open-house procedures receive hundreds of tenders (least() skips NULLs, hence the filter)
+    avg(least(n_bids, 20)) FILTER (NOT no_publication AND n_bids IS NOT NULL) AS avg_bids
+  FROM lp GROUP BY GROUPING SETS ((buyer_id, period, div), (buyer_id, period))
+), ap AS (
+  SELECT a.buyer_id, coalesce(a.division, '?') AS div, p.period, a.weight,
+    s.municipality_code IS NOT NULL AS located,
+    s.municipality_code = b.municipality_code AS local, s.province = b.province AS same_province
+  FROM awards a JOIN per p ON a.year BETWEEN p.y0 AND p.y1
+  JOIN suppliers s USING (supplier_key) JOIN buyers b ON b.buyer_id = a.buyer_id
+), loc AS (
+  -- where the winners are based, in (fractional) lots
+  SELECT buyer_id, period, CASE WHEN grouping(div) = 1 THEN '*' ELSE div END AS division,
+    sum(weight) FILTER (located) AS w_located,
+    coalesce(sum(weight) FILTER (local), 0) AS w_local,
+    coalesce(sum(weight) FILTER (same_province), 0) AS w_province
+  FROM ap GROUP BY GROUPING SETS ((buyer_id, period, div), (buyer_id, period))
+), pp AS (
+  SELECT pr.buyer_id, coalesce(pr.division, '?') AS div, per.period, pr.status
+  FROM procedures pr JOIN per ON year(pr.first_published) BETWEEN per.y0 AND per.y1
+), gaps AS (
+  SELECT buyer_id, period, CASE WHEN grouping(div) = 1 THEN '*' ELSE div END AS division,
+    count(*) FILTER (status = 'no_award_found') AS n_no_award,
+    count(*) FILTER (status IN ('awarded', 'no_award_found', 'terminated')) AS n_closed
+  FROM pp GROUP BY GROUPING SETS ((buyer_id, period, div), (buyer_id, period))
+)
+SELECT c.buyer_id, c.division, c.period, c.n_lots, c.n_direct, c.n_bid_lots, c.n_single, c.avg_bids,
+  c.n_single / nullif(c.n_bid_lots, 0) AS single_bid_rate,
+  c.n_direct / c.n_lots AS direct_share,
+  c.n_bid_lots / nullif(c.n_lots - c.n_direct, 0) AS bid_coverage,
+  l.w_local / nullif(l.w_located, 0) AS local_share,
+  l.w_province / nullif(l.w_located, 0) AS province_share,
+  g.n_no_award, g.n_closed, g.n_no_award / nullif(g.n_closed, 0) AS no_award_rate,
+  b.kind, b.size_band, b.province, b.municipality_code
+FROM comp c
+JOIN buyers b USING (buyer_id)
+LEFT JOIN loc l USING (buyer_id, period, division)
+LEFT JOIN gaps g USING (buyer_id, period, division)
+WHERE c.division <> '?';
+
+-- peers as for concentration (type, size band, category, period); a buyer needs >= 5 lots with known bids
+CREATE OR REPLACE TABLE competition_scores AS
+WITH e AS (SELECT * FROM competition WHERE n_bid_lots >= 5),
+g AS (
+  SELECT division, period, kind, size_band, count(*) AS n_bid_peers,
+    median(single_bid_rate) AS peer_median_single_bid, quantile_cont(single_bid_rate, 0.75) AS peer_p75_single_bid,
+    median(avg_bids) AS peer_median_avg_bids
+  FROM e GROUP BY ALL
+), d AS (
+  SELECT division, period, kind, size_band, median(direct_share) AS peer_median_direct_share
+  FROM competition WHERE n_lots >= 5 GROUP BY ALL
+)
+SELECT c.*, g.n_bid_peers, g.peer_median_single_bid, g.peer_p75_single_bid, g.peer_median_avg_bids,
+  d.peer_median_direct_share,
+  coalesce(c.n_bid_lots >= 5 AND c.bid_coverage >= 0.6 AND g.n_bid_peers >= 5 AND c.single_bid_rate >= 0.5
+    AND c.single_bid_rate >= g.peer_median_single_bid + 0.25, false) AS few_bidders
+FROM competition c
+LEFT JOIN g USING (division, period, kind, size_band)
+LEFT JOIN d USING (division, period, kind, size_band);
 
 -- ---------------------------------------------------------------- relationships
 CREATE OR REPLACE TABLE edges AS

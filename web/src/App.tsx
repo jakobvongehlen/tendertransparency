@@ -9,6 +9,8 @@ import SupplierProfile from './pages/SupplierProfile'
 import Compare from './pages/Compare'
 import Patterns from './pages/Patterns'
 import Gaps from './pages/Gaps'
+import Competition from './pages/Competition'
+import MapPage from './pages/MapPage'
 import Procedure from './pages/Procedure'
 import Method from './pages/Method'
 
@@ -94,6 +96,8 @@ export default function App() {
             <NavLink to="/buyers">Buyers</NavLink>
             <NavLink to="/compare">Compare peers</NavLink>
             <NavLink to="/patterns">Concentration patterns</NavLink>
+            <NavLink to="/competition">Competition</NavLink>
+            <NavLink to="/map">Map</NavLink>
             <NavLink to="/gaps">Information gaps</NavLink>
             <NavLink to="/method">How to read this</NavLink>
           </nav>
@@ -112,6 +116,8 @@ export default function App() {
             <Route path="/suppliers/:id" element={<SupplierProfile />} />
             <Route path="/compare" element={<Compare />} />
             <Route path="/patterns" element={<Patterns />} />
+            <Route path="/competition" element={<Competition />} />
+            <Route path="/map" element={<MapPage />} />
             <Route path="/gaps" element={<Gaps />} />
             <Route path="/procedures/:ocid" element={<Procedure />} />
             <Route path="/method" element={<Method />} />

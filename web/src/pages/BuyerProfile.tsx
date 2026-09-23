@@ -6,7 +6,7 @@ import { bandLabel, eur, lots, num, pct } from '../format'
 import { Chart, axisCat, axisVal, base, useTokens } from '../components/Chart'
 import { Network } from '../components/Network'
 import {
-  Comparability, Loading, NoticeLink, Panel, PeerBar, PeerLegend, ProcedureLink, Seg, Stats, SupplierLink, Table, UnusualBadge,
+  Comparability, FewBiddersBadge, Loading, NoticeLink, Panel, PeerBar, PeerLegend, ProcedureLink, Seg, Stats, SupplierLink, Table, UnusualBadge,
 } from '../components/ui'
 
 export default function BuyerProfile() {
@@ -15,6 +15,7 @@ export default function BuyerProfile() {
   const t = useTokens()
   const [period, setPeriod] = useState('all')
   const [division, setDivision] = useState('')
+  const [view, setView] = useState<'concentration' | 'competition'>('concentration')
   const { data, error, loading } = useApi(`buyers/${encodeURIComponent(id)}`, { period })
   const awards = useApi<Row[]>(`buyers/${encodeURIComponent(id)}/awards`, { division })
   const gaps = useApi<Row[]>(`buyers/${encodeURIComponent(id)}/gaps`)
@@ -23,6 +24,8 @@ export default function BuyerProfile() {
   const b = data.buyer
   const k = data.kpis
   const flagged = data.categories.filter((c: Row) => c.unusual)
+  const c = data.competition
+  const fewBidders = data.categories.filter((r: Row) => r.few_bidders)
 
   const yearOption = {
     ...base(t),
@@ -53,6 +56,10 @@ export default function BuyerProfile() {
         { label: 'Different suppliers', value: num(k.suppliers) },
         { label: 'Reported award value', value: eur(k.value_known), note: `known for ${pct(k.value_coverage)} of lots` },
         { label: 'No award found', value: pct(k.closed ? k.no_award_found / k.closed : null), note: `${num(k.no_award_found)} of ${num(k.closed)} closed procedures` },
+        { label: 'Lots with a single tender', value: c && c.n_bid_lots >= 5 ? pct(c.single_bid_rate) : '–',
+          note: c && c.n_bid_lots >= 5
+            ? <>{c.peer_median_single_bid != null ? `peers ${pct(c.peer_median_single_bid)} · ` : ''}{period === 'all' ? 'all years' : period}</>
+            : 'too few lots with a known tender count' },
       ]} />
 
       {flagged.length > 0 && (
@@ -63,12 +70,38 @@ export default function BuyerProfile() {
         </div>
       )}
 
+      {fewBidders.length > 0 && (
+        <div className="callout">
+          In {fewBidders.length} {fewBidders.length === 1 ? 'category' : 'categories'} at least half of the competitive lots drew a single
+          tender, well above comparable buyers. See the competition view below.
+        </div>
+      )}
+
       <Panel
         title="Categories compared with similar buyers"
         note={<>Peers: other {b.kind.toLowerCase()} buyers of size “{bandLabel(b.size_band)}” buying in the same category and period.</>}
-        actions={<Seg label="Period" value={period} onChange={setPeriod} options={[{ value: 'all', label: 'All years' }, ...(meta?.periods ?? []).map((p) => ({ value: p, label: p }))]} />}
+        actions={
+          <div className="row">
+            <Seg label="View" value={view} onChange={setView} options={[{ value: 'concentration', label: 'Concentration' }, { value: 'competition', label: 'Competition' }]} />
+            <Seg label="Period" value={period} onChange={setPeriod} options={[{ value: 'all', label: 'All years' }, ...(meta?.periods ?? []).map((p) => ({ value: p, label: p }))]} />
+          </div>
+        }
       >
         <PeerLegend />
+        {view === 'competition' ? (
+          <Table rows={data.categories} rowKey={(r) => r.division} limit={20} empty="No competition data for this period." cols={[
+            { key: 'label', label: 'Category', render: (r) => <>{r.label}<span className="sub">CPV {r.division}</span></> },
+            { key: 'n_bid_lots', label: 'Lots', num: true, title: 'Competitive lots with a known tender count', render: (r) => <>{num(r.n_bid_lots)}<span className="sub">{num(r.n_single)} single</span></> },
+            { key: 'single_bid_rate', label: 'Single tender', title: 'Share of competitive lots that received one tender',
+              render: (r) => (r.n_bid_lots ?? 0) >= 3 ? <PeerBar value={r.single_bid_rate} median={r.peer_median_single_bid} p75={r.peer_p75_single_bid} /> : <span className="muted small">fewer than 3 lots</span>,
+              sort: (r) => ((r.n_bid_lots ?? 0) >= 3 ? r.single_bid_rate : null) },
+            { key: 'avg_bids', label: 'Tenders per lot', num: true, render: (r) => <>{r.avg_bids != null ? r.avg_bids.toFixed(1) : '–'}{r.peer_median_avg_bids != null && <span className="sub">peers {r.peer_median_avg_bids.toFixed(1)}</span>}</> },
+            { key: 'direct_share', label: 'No prior publication', num: true, render: (r) => <>{pct(r.direct_share)}{r.peer_median_direct_share != null && <span className="sub">peers {pct(r.peer_median_direct_share)}</span>}</> },
+            { key: 'few_bidders', label: 'Flags', render: (r) => <div className="row">{r.few_bidders && <FewBiddersBadge />}{r.unusual && <UnusualBadge persistent={r.persistent_periods} />}</div>,
+              sort: (r) => (r.few_bidders ? 0 : 2) + (r.unusual ? 0 : 1) },
+            { key: 'go', label: '', render: (r) => <Link to={`/compare?division=${r.division}&kind=${encodeURIComponent(b.kind)}&period=${period === 'all' ? '2022-2024' : period}&metric=single&buyer=${encodeURIComponent(b.buyer_id)}`}>Peers</Link> },
+          ]} />
+        ) : (
         <Table rows={data.categories} rowKey={(r) => r.division} limit={20} cols={[
           { key: 'label', label: 'Category', render: (r) => <>{r.label}<span className="sub">CPV {r.division}</span></> },
           { key: 'n_lots', label: 'Lots', num: true, render: (r) => lots(r.n_lots) },
@@ -80,6 +113,7 @@ export default function BuyerProfile() {
             sort: (r) => (r.unusual ? 0 : 1) + (r.comparability === 'comparable' ? 0 : 2) },
           { key: 'go', label: '', render: (r) => <Link to={`/compare?division=${r.division}&kind=${encodeURIComponent(b.kind)}&period=${period === 'all' ? '2022-2024' : period}&buyer=${encodeURIComponent(b.buyer_id)}`}>Peers</Link> },
         ]} />
+        )}
       </Panel>
 
       {data.persistence.length > 0 && (

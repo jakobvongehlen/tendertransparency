@@ -40,6 +40,21 @@ export default function Method() {
           small samples are never flagged and why the <Link to="/compare">peer comparison</Link> plots share against the number of lots.
         </p>
 
+        <h2>Competition</h2>
+        <ul>
+          <li><b>Tenders received</b>: the number of tenders TenderNed reports for a lot. Until the switch to eForms (late 2023) this was reported per procedure; for procedures with several lots the per-lot number is then unknown, unless only one tender came in. Zero on an awarded lot means not reported. Some imported staffing platforms report “1 tender” on nearly every award from a given year; those years are treated as unknown.</li>
+          <li><b>Single tender</b>: share of competitive lots with a known tender count that received exactly one tender. <b>Competitive</b> excludes negotiated procedures without prior publication, where a single offer is the normal case.</li>
+          <li><b>Without prior publication</b>: share of awarded lots from a negotiated procedure without prior publication of a contract notice. Only such procedures that were published afterwards (for example through a voluntary transparency notice) are visible here.</li>
+          <li><b>Few bidders</b>: at least 5 competitive lots with a known count, counts known for at least 60% of them, at least 5 peers, at least half the lots with a single tender, and at least 25 percentage points above the peer median. Peers are defined as for concentration.</li>
+        </ul>
+
+        <h2>Map</h2>
+        <p>
+          Municipalities are coloured by one measure at a time, on 2026 boundaries (CBS/PDOK). Values based on fewer than 5 lots
+          or procedures are left grey. The colour scale stops at the 95th percentile, so a few extreme values don't flatten the rest.
+          <i>Suppliers from the municipality</i> uses the supplier's address as registered in the notices, which is often a head office.
+        </p>
+
         <h2>Values</h2>
         <p>
           Award values are shown as reported, with three corrections. Placeholder amounts below €100 are treated as unknown. When all

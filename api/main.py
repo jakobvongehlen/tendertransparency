@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 ROOT = Path(__file__).resolve().parent.parent
 DB = ROOT / "data" / "tenders.duckdb"
 DIST = ROOT / "web" / "dist"
+BOUNDARIES = sorted((ROOT / "data" / "cache").glob("municipalities_*.geojson"))
 NOTICE_URL = "https://www.tenderned.nl/aankondigingen/overzicht/"
 
 app = FastAPI(title="Tender Transparency NL")
@@ -26,6 +27,12 @@ def q(sql, params=None):
 def one(sql, params=None):
     rows = q(sql, params)
     return rows[0] if rows else None
+
+
+# competition fields joined from competition_scores (alias cs) next to the concentration fields
+COMP_COLS = """cs.n_bid_lots, cs.n_single, cs.single_bid_rate, cs.avg_bids, cs.direct_share, cs.n_direct,
+               cs.bid_coverage, cs.local_share, cs.n_bid_peers, cs.peer_median_single_bid, cs.peer_p75_single_bid,
+               cs.peer_median_avg_bids, cs.peer_median_direct_share, coalesce(cs.few_bidders, false) AS few_bidders"""
 
 
 def years(y0, y1):
@@ -203,13 +210,19 @@ def buyer(buyer_id: str, period: str = "all"):
                c.n_no_award, c.no_award_rate,
                f.n_peers, f.peer_median_top_share, f.peer_p75_top_share, f.peer_median_hhi, f.peer_median_suppliers, f.hhi_percentile,
                coalesce(f.comparability, 'fewer than 3 awards') AS comparability, coalesce(f.unusual, false) AS unusual,
-               f.persistent_periods
+               f.persistent_periods, {COMP_COLS}
         FROM concentration c
         JOIN cpv_divisions d USING (division)
         LEFT JOIN suppliers s ON s.supplier_key = c.top_supplier
         LEFT JOIN flags f USING (buyer_id, division, period)
+        LEFT JOIN competition_scores cs USING (buyer_id, division, period)
         WHERE c.buyer_id = ? AND c.period = ? ORDER BY c.n_lots DESC
-        """,
+        """.replace("{COMP_COLS}", COMP_COLS),
+        [buyer_id, period],
+    )
+    competition = one(
+        "SELECT * EXCLUDE (buyer_id, kind, size_band, province, municipality_code) FROM competition_scores "
+        "WHERE buyer_id = ? AND division = '*' AND period = ?",
         [buyer_id, period],
     )
     suppliers = q(
@@ -229,8 +242,8 @@ def buyer(buyer_id: str, period: str = "all"):
         """,
         [buyer_id],
     )
-    return dict(buyer=b, kpis=kpis, by_year=by_year, categories=categories, suppliers=suppliers,
-                persistence=persistence, period=period)
+    return dict(buyer=b, kpis=kpis, by_year=by_year, categories=categories, competition=competition,
+                suppliers=suppliers, persistence=persistence, period=period)
 
 
 @app.get("/api/buyers/{buyer_id}/awards")
@@ -374,20 +387,24 @@ def peers(division: str, period: str = "2022-2024", kind: str | None = None, siz
                c.top_share, c.hhi, c.top_supplier, s.name AS top_supplier_name, c.value_known,
                c.kvk_coverage, c.value_coverage, c.n_no_award, c.no_award_rate,
                f.hhi_percentile, coalesce(f.comparability, 'fewer than 3 awards') AS comparability,
-               coalesce(f.unusual, false) AS unusual, f.persistent_periods
+               coalesce(f.unusual, false) AS unusual, f.persistent_periods, {COMP_COLS}
         FROM concentration c JOIN buyers b USING (buyer_id)
         LEFT JOIN suppliers s ON s.supplier_key = c.top_supplier
         LEFT JOIN flags f USING (buyer_id, division, period)
+        LEFT JOIN competition_scores cs USING (buyer_id, division, period)
         WHERE {' AND '.join(where)} ORDER BY c.n_lots DESC
         """,
         params,
     )
     eligible = [r for r in rows if r["n_lots"] >= 3]
     tops = sorted(r["top_share"] for r in eligible)
+    singles = sorted(r["single_bid_rate"] for r in rows if (r["n_bid_lots"] or 0) >= 5)
     summary = dict(
         n_buyers=len(rows),
         n_eligible=len(eligible),
         median_top_share=tops[len(tops) // 2] if tops else None,
+        n_bid_eligible=len(singles),
+        median_single_bid=singles[len(singles) // 2] if singles else None,
         size_band=size_band,
     )
     return dict(summary=summary, rows=rows)
@@ -432,6 +449,103 @@ def distribution(division: str, period: str = "2022-2024", kind: str = "Municipa
         """,
         [division, period, kind],
     )
+
+
+# ------------------------------------------------------------------ competition
+LOT_FILTER = """FROM lot_competition l JOIN buyers b USING (buyer_id)
+    WHERE (? = '' OR b.kind = ?) AND (? = '' OR l.division = ?)"""
+
+
+def lot_metrics():
+    return """count(*) AS lots,
+        count(*) FILTER (NOT no_publication AND n_bids IS NOT NULL) AS bid_lots,
+        avg((n_bids = 1)::INT) FILTER (NOT no_publication AND n_bids IS NOT NULL) AS single_bid_rate,
+        avg(least(n_bids, 20)) FILTER (NOT no_publication AND n_bids IS NOT NULL) AS avg_bids,
+        median(n_bids) FILTER (NOT no_publication AND n_bids IS NOT NULL) AS median_bids,
+        avg(no_publication::INT) AS direct_share,
+        count(*) FILTER (NOT no_publication AND n_bids IS NOT NULL) / nullif(count(*) FILTER (NOT no_publication), 0) AS bid_coverage"""
+
+
+@app.get("/api/competition")
+def competition(period: str = "2022-2024", kind: str = "", division: str = "", limit: int = 400):
+    f = [kind, kind, division, division]
+    per = one("SELECT y0, y1 FROM periods WHERE period = ?", [period]) or dict(y0=2000, y1=2100)
+    py = [per["y0"], per["y1"]]
+    summary = one(f"SELECT {lot_metrics()} {LOT_FILTER} AND l.year BETWEEN ? AND ?", f + py)
+    by_year = q(f"SELECT l.year, {lot_metrics()} {LOT_FILTER} GROUP BY 1 ORDER BY 1", f)
+    by_division = q(
+        f"""SELECT l.division, d.label, count(DISTINCT l.buyer_id) AS buyers, {lot_metrics()}
+            {LOT_FILTER.replace("USING (buyer_id)", "USING (buyer_id) JOIN cpv_divisions d USING (division)")}
+              AND l.year BETWEEN ? AND ?
+            GROUP BY ALL HAVING bid_lots >= 30 ORDER BY lots DESC""",
+        f + py,
+    )
+    by_kind = q(
+        f"""SELECT b.kind, count(DISTINCT l.buyer_id) AS buyers, {lot_metrics()}
+            {LOT_FILTER} AND l.year BETWEEN ? AND ? GROUP BY 1 ORDER BY lots DESC""",
+        f + py,
+    )
+    histogram = q(
+        f"""SELECT least(n_bids, 10)::INT AS bids, count(*) AS lots
+            {LOT_FILTER} AND l.year BETWEEN ? AND ? AND NOT no_publication AND n_bids IS NOT NULL GROUP BY 1 ORDER BY 1""",
+        f + py,
+    )
+    buyers = q(
+        """
+        SELECT cs.buyer_id, b.name, cs.kind, cs.size_band, cs.province, cs.n_lots, cs.n_bid_lots, cs.n_single,
+               cs.single_bid_rate, cs.avg_bids, cs.direct_share, cs.n_direct, cs.bid_coverage, cs.n_bid_peers,
+               cs.peer_median_single_bid, cs.peer_p75_single_bid, cs.peer_median_avg_bids, cs.peer_median_direct_share,
+               cs.few_bidders, coalesce(f.unusual, false) AS unusual
+        FROM competition_scores cs JOIN buyers b USING (buyer_id)
+        LEFT JOIN flags f USING (buyer_id, division, period)
+        WHERE cs.period = ? AND cs.division = ? AND (? = '' OR cs.kind = ?) AND cs.n_bid_lots >= 5
+        ORDER BY cs.few_bidders DESC, cs.single_bid_rate - coalesce(cs.peer_median_single_bid, 0) DESC, cs.n_bid_lots DESC
+        LIMIT ?
+        """,
+        [period, division or "*", kind, kind, limit],
+    )
+    n_flagged = one(
+        "SELECT count(*) AS n FROM competition_scores WHERE period = ? AND division = ? AND (? = '' OR kind = ?) AND few_bidders",
+        [period, division or "*", kind, kind],
+    )["n"]
+    return dict(summary=summary, by_year=by_year, by_division=by_division, by_kind=by_kind, histogram=histogram,
+                buyers=buyers, n_flagged=n_flagged)
+
+
+# ------------------------------------------------------------------ map
+@app.get("/api/geo/municipalities")
+def municipality_boundaries():
+    if not BOUNDARIES:
+        raise HTTPException(404, "run etl/enrich.py to fetch municipal boundaries")
+    return FileResponse(BOUNDARIES[-1], media_type="application/geo+json",
+                        headers={"Cache-Control": "public, max-age=86400"})
+
+
+@app.get("/api/map")
+def map_data(period: str = "2022-2024", division: str = ""):
+    """One row per municipality (as buyer) with the metrics the map can colour by."""
+    div = division or "*"
+    rows = q(
+        """
+        WITH fl AS (
+          SELECT buyer_id, count(*) FILTER (unusual) AS n_unusual FROM flags WHERE period = $1 GROUP BY 1
+        )
+        SELECT b.buyer_id, b.name, b.municipality_code AS code, b.population, b.size_band,
+               cs.n_lots, cs.n_bid_lots, cs.single_bid_rate, cs.avg_bids, cs.direct_share, cs.local_share, cs.province_share,
+               cs.no_award_rate, cs.n_closed, cs.few_bidders, cs.peer_median_single_bid,
+               c.top_share, c.n_lots AS conc_lots, c.n_suppliers, f.unusual, f.comparability,
+               coalesce(fl.n_unusual, 0) AS n_unusual,
+               cs.n_lots / nullif(b.population, 0) * 10000 AS lots_per_10k
+        FROM buyers b
+        JOIN competition_scores cs ON cs.buyer_id = b.buyer_id AND cs.period = $1 AND cs.division = $2
+        LEFT JOIN concentration c ON c.buyer_id = b.buyer_id AND c.period = $1 AND c.division = $2
+        LEFT JOIN flags f ON f.buyer_id = b.buyer_id AND f.period = $1 AND f.division = $2
+        LEFT JOIN fl ON fl.buyer_id = b.buyer_id
+        WHERE b.kind = 'Municipality' AND b.buyer_id LIKE 'GM:%'
+        """,
+        [period, div],
+    )
+    return dict(rows=rows, boundary_year=BOUNDARIES[-1].stem.split("_")[-1] if BOUNDARIES else None)
 
 
 # ------------------------------------------------------------------ gaps
