@@ -5,6 +5,7 @@ import { useMeta } from '../App'
 import { bandLabel, eur, lots, num, pct } from '../format'
 import { Chart, axisCat, axisVal, base, useTokens } from '../components/Chart'
 import { Network } from '../components/Network'
+import { CellDrilldown } from '../components/CellDrilldown'
 import {
   Comparability, FewBiddersBadge, Loading, NoticeLink, Panel, PeerBar, PeerLegend, ProcedureLink, Seg, Stats, SupplierLink, Table, UnusualBadge,
 } from '../components/ui'
@@ -16,6 +17,7 @@ export default function BuyerProfile() {
   const [period, setPeriod] = useState('all')
   const [division, setDivision] = useState('')
   const [view, setView] = useState<'concentration' | 'competition'>('concentration')
+  const [drill, setDrill] = useState('')
   const { data, error, loading } = useApi(`buyers/${encodeURIComponent(id)}`, { period })
   const awards = useApi<Row[]>(`buyers/${encodeURIComponent(id)}/awards`, { division })
   const gaps = useApi<Row[]>(`buyers/${encodeURIComponent(id)}/gaps`)
@@ -89,8 +91,8 @@ export default function BuyerProfile() {
       >
         <PeerLegend />
         {view === 'competition' ? (
-          <Table rows={data.categories} rowKey={(r) => r.division} limit={20} empty="No competition data for this period." cols={[
-            { key: 'label', label: 'Category', render: (r) => <>{r.label}<span className="sub">CPV {r.division}</span></> },
+          <Table rows={data.categories} rowKey={(r) => r.division} limit={20} highlight={(r) => r.division === drill} empty="No competition data for this period." cols={[
+            { key: 'label', label: 'Category', render: (r) => <><button className="link" onClick={() => setDrill(r.division)}>{r.label}</button><span className="sub">CPV {r.division}</span></> },
             { key: 'n_bid_lots', label: 'Lots', num: true, title: 'Competitive lots with a known tender count', render: (r) => <>{num(r.n_bid_lots)}<span className="sub">{num(r.n_single)} single</span></> },
             { key: 'single_bid_rate', label: 'Single tender', title: 'Share of competitive lots that received one tender',
               render: (r) => (r.n_bid_lots ?? 0) >= 3 ? <PeerBar value={r.single_bid_rate} median={r.peer_median_single_bid} p75={r.peer_p75_single_bid} /> : <span className="muted small">fewer than 3 lots</span>,
@@ -102,8 +104,8 @@ export default function BuyerProfile() {
             { key: 'go', label: '', render: (r) => <Link to={`/compare?division=${r.division}&kind=${encodeURIComponent(b.kind)}&period=${period === 'all' ? '2022-2024' : period}&metric=single&buyer=${encodeURIComponent(b.buyer_id)}`}>Peers</Link> },
           ]} />
         ) : (
-        <Table rows={data.categories} rowKey={(r) => r.division} limit={20} cols={[
-          { key: 'label', label: 'Category', render: (r) => <>{r.label}<span className="sub">CPV {r.division}</span></> },
+        <Table rows={data.categories} rowKey={(r) => r.division} limit={20} highlight={(r) => r.division === drill} cols={[
+          { key: 'label', label: 'Category', render: (r) => <><button className="link" onClick={() => setDrill(r.division)}>{r.label}</button><span className="sub">CPV {r.division}</span></> },
           { key: 'n_lots', label: 'Lots', num: true, render: (r) => lots(r.n_lots) },
           { key: 'n_suppliers', label: 'Suppliers', num: true, render: (r) => <>{r.n_suppliers}{r.peer_median_suppliers != null && <span className="sub">peers {num(r.peer_median_suppliers)}</span>}</> },
           { key: 'top_share', label: 'Share of top supplier', title: 'Share of awarded lots going to the most frequent supplier',
@@ -114,7 +116,10 @@ export default function BuyerProfile() {
           { key: 'go', label: '', render: (r) => <Link to={`/compare?division=${r.division}&kind=${encodeURIComponent(b.kind)}&period=${period === 'all' ? '2022-2024' : period}&buyer=${encodeURIComponent(b.buyer_id)}`}>Peers</Link> },
         ]} />
         )}
+        <p className="small muted" style={{ marginTop: 8 }}>Click a category to see its suppliers and lots.</p>
       </Panel>
+
+      {drill && <CellDrilldown buyerId={b.buyer_id} division={drill} period={period} showBuyer={false} scrollOnOpen onClose={() => setDrill('')} />}
 
       {data.persistence.length > 0 && (
         <Panel title="Same top supplier across periods" note="Categories where one supplier won at least half of the lots in two or more three-year periods.">

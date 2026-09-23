@@ -250,6 +250,75 @@ def buyer(buyer_id: str, period: str = "all"):
                 suppliers=suppliers, persistence=persistence, period=period)
 
 
+@app.get("/api/buyers/{buyer_id}/cell")
+def buyer_cell(buyer_id: str, division: str, period: str = "all"):
+    """Everything behind one buyer x category x period comparison: who won, how, and when."""
+    per = one("SELECT y0, y1 FROM periods WHERE period = ?", [period]) or dict(y0=2000, y1=2100)
+    y = [per["y0"], per["y1"]]
+    b = one("SELECT buyer_id, name, kind, size_band, province FROM buyers WHERE buyer_id = ?", [buyer_id])
+    if not b:
+        raise HTTPException(404, "buyer not found")
+    summary = one(
+        f"""
+        SELECT c.n_lots, c.n_suppliers, c.n_procedures, c.top_share, c.hhi, c.top_supplier, s.name AS top_supplier_name,
+               c.value_known, c.kvk_coverage, c.no_award_rate, c.n_no_award,
+               f.n_peers, f.peer_median_top_share, f.peer_p75_top_share, f.hhi_percentile,
+               coalesce(f.comparability, 'fewer than 3 awards') AS comparability, coalesce(f.unusual, false) AS unusual,
+               f.persistent_periods, {COMP_COLS}
+        FROM concentration c
+        LEFT JOIN suppliers s ON s.supplier_key = c.top_supplier
+        LEFT JOIN flags f USING (buyer_id, division, period)
+        LEFT JOIN competition_scores cs USING (buyer_id, division, period)
+        WHERE c.buyer_id = ? AND c.division = ? AND c.period = ?
+        """,
+        [buyer_id, division, period],
+    )
+    # lot-level rows with how each lot was competed; frameworks recognised by several winners or the title
+    lots_sql = """
+        SELECT a.ocid, a.notice_id, a.published, a.year, a.title, a.lot_id, a.lot_title, a.procedure, a.scope,
+               a.supplier_key, s.name AS supplier_name, s.locality AS supplier_locality, a.value, a.weight,
+               a.n_lot_suppliers, l.n_bids, coalesce(l.no_publication, false) AS no_publication,
+               (a.n_lot_suppliers > 1 OR a.title ILIKE '%raamovereenkomst%' OR a.title ILIKE '%raamcontract%'
+                OR a.title ILIKE '%framework%') AS framework
+        FROM awards a JOIN suppliers s USING (supplier_key)
+        LEFT JOIN lot_competition l USING (ocid, lot_id)
+        WHERE a.buyer_id = ? AND a.division = ? AND a.year BETWEEN ? AND ?
+    """
+    params = [buyer_id, division] + y
+    suppliers = q(
+        f"""
+        WITH x AS ({lots_sql})
+        SELECT supplier_key, any_value(supplier_name) AS name, any_value(supplier_locality) AS locality,
+               sum(weight) AS lots, sum(weight) / sum(sum(weight)) OVER () AS share,
+               count(DISTINCT ocid) AS procedures, sum(value) AS value,
+               min(year) AS first_year, max(year) AS last_year,
+               count(*) FILTER (n_bids = 1 AND NOT no_publication) AS single_bid_lots,
+               count(*) FILTER (n_bids IS NOT NULL AND NOT no_publication) AS bid_lots,
+               count(*) FILTER (no_publication) AS no_publication_lots,
+               count(*) FILTER (framework) AS framework_lots,
+               avg(least(n_bids, 20)) FILTER (n_bids IS NOT NULL AND NOT no_publication) AS avg_bids
+        FROM x GROUP BY 1 ORDER BY lots DESC, value DESC NULLS LAST
+        """,
+        params,
+    )
+    by_year = q(
+        f"WITH x AS ({lots_sql}) SELECT year, supplier_key, sum(weight) AS lots FROM x GROUP BY ALL ORDER BY 1",
+        params,
+    )
+    lots = q(f"{lots_sql} ORDER BY a.published DESC, a.ocid, a.lot_id LIMIT 500", params)
+    gaps = q(
+        """
+        SELECT ocid, title, procedure, scope, first_published, last_notice_id
+        FROM procedures WHERE buyer_id = ? AND division = ? AND status = 'no_award_found'
+          AND year(first_published) BETWEEN ? AND ?
+        ORDER BY first_published DESC LIMIT 100
+        """,
+        params,
+    )
+    return dict(buyer=b, division=division, period=period, summary=summary, suppliers=suppliers,
+                by_year=by_year, lots=lots, gaps=gaps)
+
+
 @app.get("/api/buyers/{buyer_id}/awards")
 def buyer_awards(buyer_id: str, division: str | None = None, supplier_key: str | None = None, limit: int = 200):
     where, params = ["a.buyer_id = ?"], [buyer_id]

@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useApi, type Row } from '../api'
 import { useMeta } from '../App'
 import { bandLabel, eur, lots, num, pct } from '../format'
 import { Chart, axisVal, base, useTokens } from '../components/Chart'
+import { CellDrilldown } from '../components/CellDrilldown'
 import { BuyerLink, Comparability, FewBiddersBadge, Loading, Panel, PeerBar, Seg, Stats, SupplierLink, Table, UnusualBadge } from '../components/ui'
 
 export default function Compare() {
@@ -16,6 +18,9 @@ export default function Compare() {
   const size = sp.get('size_band') ?? ''
   const buyer = sp.get('buyer') ?? ''
   const single = sp.get('metric') === 'single'
+  // scroll to the details only after a deliberate pick, not when arriving with ?buyer= in the URL
+  const [jump, setJump] = useState(false)
+  const pick = (id: string) => { setJump(true); set('buyer', id) }
   const set = (k: string, v: string) => {
     const n = new URLSearchParams(sp)
     if (v) n.set(k, v); else n.delete(k)
@@ -112,7 +117,7 @@ export default function Compare() {
           </select>
         </label>
         <label>Highlight buyer
-          <select value={buyer} onChange={(e) => set('buyer', e.target.value)}>
+          <select value={buyer} onChange={(e) => pick(e.target.value)}>
             <option value="">None</option>
             {[...rows].sort((a, b) => a.name.localeCompare(b.name)).map((r) => <option key={r.buyer_id} value={r.buyer_id}>{r.name}</option>)}
           </select>
@@ -152,14 +157,15 @@ export default function Compare() {
             note={single
               ? 'Vertical: share of competitive lots that received a single tender. Horizontal: competitive lots with a known tender count.'
               : "Vertical: share of awarded lots won by the buyer's most frequent supplier. Horizontal: number of awarded lots."}>
-            <Chart option={option as any} height={420} onEvents={{ click: (p: any) => p.data?.r && set('buyer', p.data.r.buyer_id) }} />
-            <p className="small muted">Click a dot to highlight that buyer. {kind
+            <Chart option={option as any} height={420} onEvents={{ click: (p: any) => p.data?.r && pick(p.data.r.buyer_id) }} />
+            <p className="small muted">Click a dot to see the suppliers and lots behind it. {kind
               ? `Peer groups for the “${single ? 'few bidders' : 'unusual'}” flag are buyers of the same type and size band.`
               : `All buyer types are shown together; the “${single ? 'few bidders' : 'unusual'}” flag still compares each buyer only with buyers of its own type and size band.`}</p>
           </Panel>
-          <Panel title="All buyers in this comparison">
+          {sel && <CellDrilldown buyerId={buyer} division={division} period={period} scrollOnOpen={jump} onClose={() => set('buyer', '')} />}
+          <Panel title="All buyers in this comparison" note="Click a buyer's row to see the lots behind its figures.">
             <Table rows={rows} limit={30} rowKey={(r) => r.buyer_id} highlight={(r) => r.buyer_id === buyer} initialSort={{ key: 'n_lots', dir: -1 }} cols={[
-              { key: 'name', label: 'Buyer', render: (r) => <><BuyerLink id={r.buyer_id} name={r.name} /><span className="sub">{[kind ? null : r.kind, r.province, bandLabel(r.size_band)].filter(Boolean).join(' · ')}</span></> },
+              { key: 'name', label: 'Buyer', render: (r) => <><button className="link" onClick={() => pick(r.buyer_id)}>{r.name}</button><span className="sub">{[kind ? null : r.kind, r.province, bandLabel(r.size_band)].filter(Boolean).join(' · ')} · <BuyerLink id={r.buyer_id} name="profile" /></span></> },
               { key: 'n_lots', label: 'Lots', num: true, render: (r) => lots(r.n_lots) },
               ...(single ? [] : [{ key: 'n_suppliers', label: 'Suppliers', num: true }]),
               ...(single ? [
