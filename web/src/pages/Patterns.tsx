@@ -2,7 +2,7 @@ import { useSearchParams, Link } from 'react-router-dom'
 import { useApi } from '../api'
 import { useMeta } from '../App'
 import { bandLabel, lots, num, pct } from '../format'
-import { BuyerLink, Comparability, Loading, Panel, PeerBar, PeerLegend, SupplierLink, Table } from '../components/ui'
+import { BuyerLink, Comparability, Loading, Panel, PeerBar, PeerLegend, SupplierLink, Table, StaleNotice } from '../components/ui'
 
 export default function Patterns() {
   const meta = useMeta()
@@ -15,7 +15,7 @@ export default function Patterns() {
   }
   const onlyUnusual = get('all') !== '1'
   const persistent = get('persistent') === '1'
-  const { data, error, loading } = useApi<any[]>('flags', {
+  const { data, error, loading, retry } = useApi<any[]>('flags', {
     division: get('division'), kind: get('kind'), province: get('province'), period: get('period'),
     only_unusual: onlyUnusual, persistent, limit: 500,
   })
@@ -58,6 +58,8 @@ export default function Patterns() {
         <label className="check"><input type="checkbox" checked={persistent} onChange={(e) => set('persistent', e.target.checked ? '1' : '')} /> Same top supplier in 2+ periods</label>
         <label className="check"><input type="checkbox" checked={!onlyUnusual} onChange={(e) => set('all', e.target.checked ? '1' : '')} /> Include unflagged comparisons</label>
       </div>
+
+      <StaleNotice error={data ? error : null} retry={retry} />
       <Panel title={data ? `${num(data.length)}${data.length === 500 ? '+' : ''} ${onlyUnusual ? 'flagged patterns' : 'comparisons'}` : 'Patterns'} className={loading ? 'stale' : ''}
         note="Sorted by how far the top-supplier share exceeds the peer median.">
         <PeerLegend />

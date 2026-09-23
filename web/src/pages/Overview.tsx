@@ -3,7 +3,7 @@ import { useApi, type Row } from '../api'
 import { useMeta } from '../App'
 import { compact, eur, lots, num, pct } from '../format'
 import { Chart, axisCat, axisVal, base, useTokens } from '../components/Chart'
-import { BuyerLink, Loading, Panel, Stats, SupplierLink, Table } from '../components/ui'
+import { BuyerLink, Loading, Panel, Stats, SupplierLink, Table, StaleNotice } from '../components/ui'
 import { Link, useSearchParams } from 'react-router-dom'
 
 const STATUS = [
@@ -24,7 +24,7 @@ export default function Overview() {
     if (v) n.set('division', v); else n.delete('division')
     setSp(n, { replace: true })
   }
-  const { data, error, loading } = useApi('overview', { year_from: range[0], year_to: range[1], division })
+  const { data, error, loading, retry } = useApi('overview', { year_from: range[0], year_to: range[1], division })
   const label = meta?.divisions.find((d) => d.division === division)?.label
   const scope = label ? ` in ${label.toLowerCase()}` : ''
   const years = meta ? Array.from({ length: meta.year_range.y1 - meta.year_range.y0 + 1 }, (_, i) => meta.year_range.y0 + i) : []
@@ -93,6 +93,7 @@ export default function Overview() {
         </label>
       </div>
 
+      <StaleNotice error={data ? error : null} retry={retry} />
       <Stats items={[
         { label: 'Procedures', value: num(k.procedures), note: `${num(k.awarded_procedures)} with a published award` },
         { label: 'Awarded lots', value: compact(k.lots), note: 'each lot counts once, shared between winners' },

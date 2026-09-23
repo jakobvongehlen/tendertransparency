@@ -5,7 +5,7 @@ import { useMeta } from '../App'
 import { bandLabel, eur, lots, num, pct } from '../format'
 import { Chart, axisVal, base, useTokens } from '../components/Chart'
 import { CellDrilldown } from '../components/CellDrilldown'
-import { DIRECT_AWARD_TIP, BuyerLink, Comparability, FewBiddersBadge, Loading, Panel, PeerBar, Seg, Stats, SupplierLink, Table, UnusualBadge } from '../components/ui'
+import { DIRECT_AWARD_TIP, BuyerLink, Comparability, FewBiddersBadge, Loading, Panel, PeerBar, Seg, Stats, SupplierLink, Table, UnusualBadge, StaleNotice } from '../components/ui'
 
 export default function Compare() {
   const meta = useMeta()
@@ -27,7 +27,7 @@ export default function Compare() {
     if (k === 'kind') { n.delete('size_band'); n.delete('buyer') }
     setSp(n, { replace: true })
   }
-  const { data, error, loading } = useApi('peers', { division, kind, period, size_band: kind ? size : '' })
+  const { data, error, loading, retry } = useApi('peers', { division, kind, period, size_band: kind ? size : '' })
   const bands = meta?.size_bands.find((b) => b.kind === kind)?.bands ?? []
   const label = meta?.divisions.find((d) => d.division === division)?.label ?? division
 
@@ -123,6 +123,8 @@ export default function Compare() {
           </select>
         </label>
       </div>
+
+      <StaleNotice error={data ? error : null} retry={retry} />
 
       {!data ? <Loading error={error} /> : (
         <div className={loading ? 'stale' : ''} style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>

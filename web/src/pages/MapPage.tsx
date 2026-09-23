@@ -5,7 +5,7 @@ import { getJSON, useApi, type Row } from '../api'
 import { useMeta } from '../App'
 import { bandLabel, lots, num, pct } from '../format'
 import { Chart, base, useTokens } from '../components/Chart'
-import { Comparability, DIRECT_AWARD_TIP, FewBiddersBadge, Loading, Panel, Table, UnusualBadge } from '../components/ui'
+import { Comparability, DIRECT_AWARD_TIP, FewBiddersBadge, Loading, Panel, StaleNotice, Table, UnusualBadge } from '../components/ui'
 
 type Metric = {
   key: string
@@ -52,6 +52,9 @@ export default function MapPage() {
   const period = sp.get('period') ?? '2022-2024'
   const available = METRICS.filter((m) => (division ? !m.allOnly : !m.divisionOnly))
   const metric = available.find((m) => m.key === sp.get('metric')) ?? available[0]
+  // the requested measure may not exist for this selection (e.g. top-supplier share needs one category)
+  const wanted = METRICS.find((m) => m.key === sp.get('metric'))
+  const fellBack = wanted && wanted.key !== metric.key ? wanted : null
   const [selected, setSelected] = useState('')
   const [geoReady, setGeoReady] = useState(false)
   const [geoError, setGeoError] = useState<string | null>(null)
@@ -61,7 +64,7 @@ export default function MapPage() {
     if (v) n.set(k, v); else n.delete(k)
     setSp(n, { replace: true })
   }
-  const { data, error, loading } = useApi('map', { division, period })
+  const { data, error, loading, retry } = useApi('map', { division, period })
   const label = meta?.divisions.find((d) => d.division === division)?.label
 
   const rows: Row[] = useMemo(() => data?.rows ?? [], [data])
@@ -135,6 +138,16 @@ export default function MapPage() {
           </select>
         </label>
       </div>
+
+      <StaleNotice error={data ? error : null} retry={retry} />
+      {fellBack && (
+        <div className="callout">
+          “{fellBack.label}” is only available {fellBack.divisionOnly ? 'for a single category' : 'for all categories together'}, so the map shows “{metric.label}”.{' '}
+          {fellBack.divisionOnly
+            ? 'Pick a category to see it again.'
+            : <button className="link" onClick={() => set('division', '')}>Show all categories</button>}
+        </div>
+      )}
 
       <div className="grid map-grid">
         <Panel

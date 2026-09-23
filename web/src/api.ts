@@ -12,11 +12,16 @@ export async function getJSON<T = any>(path: string, params?: Record<string, unk
   return res.json()
 }
 
-/** Fetch on dependency change; keeps the previous data while refetching (no skeleton flash). */
+/**
+ * Fetch on dependency change; keeps the previous data while refetching (no skeleton flash).
+ * A failed request is retried once (the API may be restarting); if it fails again, `error` is set
+ * while `data` still holds the previous result, so pages must show that it is out of date.
+ */
 export function useApi<T = any>(path: string | null, params?: Record<string, unknown>) {
   const [data, setData] = useState<T | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [attempt, setAttempt] = useState(0)
   const key = path ? path + JSON.stringify(params ?? {}) : null
   const seq = useRef(0)
   useEffect(() => {
@@ -24,12 +29,14 @@ export function useApi<T = any>(path: string | null, params?: Record<string, unk
     const id = ++seq.current
     setLoading(true)
     getJSON<T>(path, params)
+      .catch(() => new Promise<T>((resolve, reject) => setTimeout(() => getJSON<T>(path, params).then(resolve, reject), 800)))
       .then((d) => { if (id === seq.current) { setData(d); setError(null) } })
       .catch((e) => { if (id === seq.current) setError(String(e.message ?? e)) })
       .finally(() => { if (id === seq.current) setLoading(false) })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key])
-  return { data, error, loading }
+  }, [key, attempt])
+  const retry = () => setAttempt((a) => a + 1)
+  return { data, error, loading, retry }
 }
 
 export type Meta = {

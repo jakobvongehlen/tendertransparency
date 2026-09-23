@@ -3,7 +3,7 @@ import { useApi, type Row } from '../api'
 import { useMeta } from '../App'
 import { bandLabel, num, pct } from '../format'
 import { Chart, axisCat, axisVal, base, useTokens } from '../components/Chart'
-import { DIRECT_AWARD_TIP, BuyerLink, FewBiddersBadge, Loading, Panel, PeerBar, PeerLegend, Stats, Table, UnusualBadge } from '../components/ui'
+import { DIRECT_AWARD_TIP, BuyerLink, FewBiddersBadge, Loading, Panel, PeerBar, PeerLegend, Stats, Table, UnusualBadge, StaleNotice } from '../components/ui'
 
 const avg = (v: number | null | undefined) => (v === null || v === undefined ? '–' : v.toFixed(1))
 
@@ -19,7 +19,7 @@ export default function Competition() {
     if (v) n.set(k, v); else n.delete(k)
     setSp(n, { replace: true })
   }
-  const { data, error, loading } = useApi('competition', { kind, division, period })
+  const { data, error, loading, retry } = useApi('competition', { kind, division, period })
   const label = meta?.divisions.find((d) => d.division === division)?.label
   const scope = [kind ? kind.toLowerCase() + ' buyers' : 'all buyers', label?.toLowerCase()].filter(Boolean).join(', ')
 
@@ -99,6 +99,7 @@ export default function Competition() {
         </label>
       </div>
 
+      <StaleNotice error={data ? error : null} retry={retry} />
       <Stats items={[
         { label: 'Lots with a single tender', value: pct(s.single_bid_rate, 1), note: `of ${num(s.bid_lots)} competitive lots with a known count` },
         { label: 'Tenders per lot', value: avg(s.avg_bids), note: `median ${num(s.median_bids)}` },

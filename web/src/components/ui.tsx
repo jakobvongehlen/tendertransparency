@@ -211,6 +211,17 @@ export function Seg<T extends string>({ value, options, onChange, label }: {
   )
 }
 
+/** Shown when a refresh failed and the page still displays the previous result. */
+export function StaleNotice({ error, retry }: { error?: string | null; retry: () => void }) {
+  if (!error) return null
+  return (
+    <div className="callout warn row" role="alert">
+      <span>Could not load the new selection ({error}); still showing the previous result.</span>
+      <button className="link" onClick={retry}>Try again</button>
+    </div>
+  )
+}
+
 export function Loading({ error }: { error?: string | null }) {
   return error ? <p className="error">Could not load data: {error}. Is the API running on port 8000?</p> : <p className="loading">Loading…</p>
 }

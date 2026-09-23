@@ -7,8 +7,7 @@ import { Chart, axisCat, axisVal, base, useTokens } from '../components/Chart'
 import { Network } from '../components/Network'
 import { CellDrilldown } from '../components/CellDrilldown'
 import {
-  Comparability, DIRECT_AWARD_TIP, FewBiddersBadge, Loading, NoticeLink, Panel, PeerBar, PeerLegend, ProcedureLink, Seg, Stats, SupplierLink, Table, UnusualBadge,
-} from '../components/ui'
+  Comparability, DIRECT_AWARD_TIP, FewBiddersBadge, Loading, NoticeLink, Panel, PeerBar, PeerLegend, ProcedureLink, Seg, Stats, SupplierLink, Table, UnusualBadge, StaleNotice } from '../components/ui'
 
 export default function BuyerProfile() {
   const { id = '' } = useParams()
@@ -18,7 +17,7 @@ export default function BuyerProfile() {
   const [division, setDivision] = useState('')
   const [view, setView] = useState<'concentration' | 'competition'>('concentration')
   const [drill, setDrill] = useState('')
-  const { data, error, loading } = useApi(`buyers/${encodeURIComponent(id)}`, { period })
+  const { data, error, loading, retry } = useApi(`buyers/${encodeURIComponent(id)}`, { period })
   const awards = useApi<Row[]>(`buyers/${encodeURIComponent(id)}/awards`, { division })
   const gaps = useApi<Row[]>(`buyers/${encodeURIComponent(id)}/gaps`)
 
@@ -52,6 +51,7 @@ export default function BuyerProfile() {
         </p>
       </div>
 
+      <StaleNotice error={data ? error : null} retry={retry} />
       <Stats items={[
         { label: 'Procedures', value: num(k.procedures) },
         { label: 'Awarded lots', value: lots(k.lots) },

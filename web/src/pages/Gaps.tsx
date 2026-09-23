@@ -3,7 +3,7 @@ import { useApi, type Row } from '../api'
 import { useMeta } from '../App'
 import { num, pct } from '../format'
 import { Chart, axisCat, axisVal, base, useTokens } from '../components/Chart'
-import { BuyerLink, Loading, NoticeLink, Panel, ProcedureLink, Table } from '../components/ui'
+import { BuyerLink, Loading, NoticeLink, Panel, ProcedureLink, Table, StaleNotice } from '../components/ui'
 
 const QUALITY = [
   { key: 'kvk_coverage', label: 'Supplier identified by KvK number' },
@@ -14,7 +14,7 @@ export default function Gaps() {
   const meta = useMeta()
   const t = useTokens()
   const [kind, setKind] = useState('')
-  const { data, error, loading } = useApi('gaps', { kind })
+  const { data, error, loading, retry } = useApi('gaps', { kind })
   if (!data) return <div className="page"><Loading error={error} /></div>
 
   const years = [...new Set<number>(data.status_by_year.map((r: Row) => r.year))].sort()
@@ -66,6 +66,8 @@ export default function Gaps() {
           </select>
         </label>
       </div>
+
+      <StaleNotice error={data ? error : null} retry={retry} />
 
       <div className="grid g2">
         <Panel title="Procedures without a discoverable award" note="Share of closed procedures (award, early termination or older than 12 months) with a contract notice but no award notice.">
