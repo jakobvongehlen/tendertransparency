@@ -4,7 +4,7 @@ import { useMeta } from '../App'
 import { compact, eur, lots, num, pct } from '../format'
 import { Chart, axisCat, axisVal, base, useTokens } from '../components/Chart'
 import { BuyerLink, Loading, Panel, Stats, SupplierLink, Table } from '../components/ui'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 const STATUS = [
   { key: 'awarded', label: 'Award published' },
@@ -17,7 +17,16 @@ export default function Overview() {
   const meta = useMeta()
   const t = useTokens()
   const [range, setRange] = useState<[number | '', number | '']>(['', ''])
-  const { data, error, loading } = useApi('overview', { year_from: range[0], year_to: range[1] })
+  const [sp, setSp] = useSearchParams()
+  const division = sp.get('division') ?? ''
+  const setDivision = (v: string) => {
+    const n = new URLSearchParams(sp)
+    if (v) n.set('division', v); else n.delete('division')
+    setSp(n, { replace: true })
+  }
+  const { data, error, loading } = useApi('overview', { year_from: range[0], year_to: range[1], division })
+  const label = meta?.divisions.find((d) => d.division === division)?.label
+  const scope = label ? ` in ${label.toLowerCase()}` : ''
   const years = meta ? Array.from({ length: meta.year_range.y1 - meta.year_range.y0 + 1 }, (_, i) => meta.year_range.y0 + i) : []
 
   if (!data) return <div className="page"><Loading error={error} /></div>
@@ -38,14 +47,20 @@ export default function Overview() {
     })),
   }
 
-  const divs = data.by_division.slice(0, 14).reverse()
+  // keep the selected category visible even when it is not among the largest
+  const top = data.by_division.slice(0, 14)
+  const picked = data.by_division.find((r: Row) => r.division === division)
+  const divs = (picked && !top.includes(picked) ? [...top.slice(0, 13), picked] : top).reverse()
   const divOption = {
     ...base(t),
     tooltip: { ...(base(t).tooltip as object), trigger: 'axis', axisPointer: { type: 'shadow' },
       formatter: (p: any) => { const r = divs[p[0].dataIndex]; return `<b>${r.label}</b><br/>${lots(r.lots)} lots · ${num(r.suppliers)} suppliers · ${eur(r.value)} reported` } },
     xAxis: { type: 'value', ...axisVal(t) },
     yAxis: { type: 'category', data: divs.map((r: Row) => r.label), ...axisCat(t), axisLabel: { color: t.ink2, fontSize: 12, width: 190, overflow: 'truncate' } },
-    series: [{ type: 'bar', barMaxWidth: 16, data: divs.map((r: Row) => Math.round(r.lots)), itemStyle: { color: t.s1, borderRadius: [0, 4, 4, 0] },
+    series: [{ type: 'bar', barMaxWidth: 16, cursor: 'pointer',
+      data: divs.map((r: Row) => ({ value: Math.round(r.lots), division: r.division,
+        itemStyle: { color: !division || r.division === division ? t.s1 : t.peer } })),
+      itemStyle: { borderRadius: [0, 4, 4, 0] },
       label: { show: true, position: 'right', color: t.ink2, fontSize: 11, formatter: (p: any) => compact(p.value) } }],
   }
 
@@ -60,6 +75,12 @@ export default function Overview() {
       </div>
 
       <div className="filters">
+        <label>Category
+          <select value={division} onChange={(e) => setDivision(e.target.value)}>
+            <option value="">All categories</option>
+            {meta?.divisions.map((d) => <option key={d.division} value={d.division}>{d.division} · {d.label}</option>)}
+          </select>
+        </label>
         <label>From
           <select value={range[0]} onChange={(e) => setRange([e.target.value ? +e.target.value : '', range[1]])}>
             <option value="">All years</option>{years.map((y) => <option key={y}>{y}</option>)}
@@ -82,15 +103,17 @@ export default function Overview() {
       ]} />
 
       <div className="grid g2">
-        <Panel title="Procedures by year and outcome" note="By year of first notice. Procedures from the last 12 months are not yet judged.">
+        <Panel title={`Procedures${scope} by year and outcome`} note="By year of first notice. Procedures from the last 12 months are not yet judged.">
           <Chart option={yearOption as any} height={300} table={
             <Table rows={data.by_year} cols={[{ key: 'year', label: 'Year' }, ...STATUS.map((s) => ({ key: s.key, label: s.label, num: true, render: (r: Row) => num(r[s.key]) }))]} limit={20} />
           } />
         </Panel>
-        <Panel title="What is bought" note="Awarded lots by CPV division, top 14.">
-          <Chart option={divOption as any} height={300} table={
+        <Panel title="What is bought" note={division
+          ? <>Awarded lots by CPV division; {label?.toLowerCase()} highlighted. Click a bar to switch category, or <button className="link" onClick={() => setDivision('')}>show all categories</button>.</>
+          : 'Awarded lots by CPV division, top 14. Click a bar to focus the page on that category.'}>
+          <Chart option={divOption as any} height={300} onEvents={{ click: (p: any) => p.data?.division && setDivision(p.data.division === division ? '' : p.data.division) }} table={
             <Table rows={data.by_division} cols={[
-              { key: 'label', label: 'Category' },
+              { key: 'label', label: 'Category', render: (r) => <button className="link" onClick={() => setDivision(r.division)}>{r.label}</button> },
               { key: 'lots', label: 'Lots', num: true, render: (r) => lots(r.lots) },
               { key: 'suppliers', label: 'Suppliers', num: true, render: (r) => num(r.suppliers) },
               { key: 'value', label: 'Reported value', num: true, render: (r) => eur(r.value) },
@@ -100,7 +123,7 @@ export default function Overview() {
       </div>
 
       <div className="grid g2">
-        <Panel title="Largest suppliers" note="By reported award value. Values are missing for many awards, so rankings by value are indicative.">
+        <Panel title={`Largest suppliers${scope}`} note="By reported award value. Values are missing for many awards, so rankings by value are indicative.">
           <Table rows={data.top_suppliers} limit={15} cols={[
             { key: 'name', label: 'Supplier', render: (r) => <SupplierLink id={r.supplier_key} name={r.name} /> },
             { key: 'value', label: 'Reported value', num: true, render: (r) => eur(r.value) },
@@ -108,7 +131,7 @@ export default function Overview() {
             { key: 'buyers', label: 'Buyers', num: true },
           ]} />
         </Panel>
-        <Panel title="Largest buyers" note="By reported award value.">
+        <Panel title={`Largest buyers${scope}`} note="By reported award value.">
           <Table rows={data.top_buyers} limit={15} cols={[
             { key: 'name', label: 'Buyer', render: (r) => <><BuyerLink id={r.buyer_id} name={r.name} /><span className="sub">{r.kind}</span></> },
             { key: 'value', label: 'Reported value', num: true, render: (r) => eur(r.value) },
@@ -118,7 +141,7 @@ export default function Overview() {
         </Panel>
       </div>
 
-      <Panel title="Buyers by type" note={<>Types are derived from names and TenderNed classifications. <Link to="/buyers">Browse all buyers</Link>.</>}>
+      <Panel title={`Buyers by type${scope}`} note={<>Types are derived from names and TenderNed classifications. <Link to="/buyers">Browse all buyers</Link>.</>}>
         <Table rows={data.by_kind} cols={[
           { key: 'kind', label: 'Type', render: (r) => <Link to={`/buyers?kind=${encodeURIComponent(r.kind)}`}>{r.kind}</Link> },
           { key: 'buyers', label: 'Buyers', num: true },

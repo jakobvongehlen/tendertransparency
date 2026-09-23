@@ -75,12 +75,15 @@ def search(q_: str = Query(..., alias="q", min_length=2), limit: int = 12):
 
 # ------------------------------------------------------------------ overview
 @app.get("/api/overview")
-def overview(year_from: int | None = None, year_to: int | None = None):
+def overview(year_from: int | None = None, year_to: int | None = None, division: str = ""):
+    """division filters everything except by_division, which stays as context for choosing a category."""
     y = years(year_from, year_to)
+    d = [division, division]
+    df = "AND (? = '' OR division = ?)"
     kpis = one(
-        """
-        WITH a AS (SELECT * FROM awards WHERE year BETWEEN ? AND ?),
-             p AS (SELECT * FROM procedures WHERE year(first_published) BETWEEN ? AND ?)
+        f"""
+        WITH a AS (SELECT * FROM awards WHERE year BETWEEN ? AND ? {df}),
+             p AS (SELECT * FROM procedures WHERE year(first_published) BETWEEN ? AND ? {df})
         SELECT (SELECT count(*) FROM p) AS procedures,
                (SELECT count(*) FROM p WHERE status = 'awarded') AS awarded_procedures,
                (SELECT count(*) FROM p WHERE status = 'no_award_found') AS no_award_found,
@@ -91,13 +94,14 @@ def overview(year_from: int | None = None, year_to: int | None = None):
                (SELECT sum(value) FROM a) AS value_known,
                (SELECT sum(weight * (value IS NOT NULL)::INT) / sum(weight) FROM a) AS value_coverage
         """,
-        y + y,
+        y + d + y + d,
     )
     by_year = q(
-        """
-        WITH p AS (SELECT year(first_published) AS year, status FROM procedures WHERE year(first_published) BETWEEN ? AND ?),
+        f"""
+        WITH p AS (SELECT year(first_published) AS year, status FROM procedures
+                   WHERE year(first_published) BETWEEN ? AND ? {df}),
              a AS (SELECT year, sum(weight) AS lots, sum(value) AS value, count(DISTINCT supplier_key) AS suppliers
-                   FROM awards WHERE year BETWEEN ? AND ? GROUP BY 1)
+                   FROM awards WHERE year BETWEEN ? AND ? {df} GROUP BY 1)
         SELECT p.year, count(*) AS procedures,
                count(*) FILTER (status = 'awarded') AS awarded,
                count(*) FILTER (status = 'no_award_found') AS no_award_found,
@@ -106,7 +110,7 @@ def overview(year_from: int | None = None, year_to: int | None = None):
                any_value(a.lots) AS lots, any_value(a.value) AS value, any_value(a.suppliers) AS suppliers
         FROM p LEFT JOIN a USING (year) GROUP BY 1 ORDER BY 1
         """,
-        y + y,
+        y + d + y + d,
     )
     by_division = q(
         """
@@ -118,27 +122,27 @@ def overview(year_from: int | None = None, year_to: int | None = None):
         y,
     )
     by_kind = q(
-        """
+        f"""
         SELECT b.kind, count(DISTINCT a.buyer_id) AS buyers, sum(weight) AS lots, sum(value) AS value
-        FROM awards a JOIN buyers b USING (buyer_id) WHERE year BETWEEN ? AND ? GROUP BY 1 ORDER BY lots DESC
+        FROM awards a JOIN buyers b USING (buyer_id) WHERE year BETWEEN ? AND ? {df} GROUP BY 1 ORDER BY lots DESC
         """,
-        y,
+        y + d,
     )
     top_suppliers = q(
-        """
+        f"""
         SELECT a.supplier_key, s.name, sum(weight) AS lots, sum(value) AS value, count(DISTINCT a.buyer_id) AS buyers
-        FROM awards a JOIN suppliers s USING (supplier_key) WHERE year BETWEEN ? AND ?
+        FROM awards a JOIN suppliers s USING (supplier_key) WHERE year BETWEEN ? AND ? {df}
         GROUP BY ALL ORDER BY value DESC NULLS LAST LIMIT 15
         """,
-        y,
+        y + d,
     )
     top_buyers = q(
-        """
+        f"""
         SELECT a.buyer_id, b.name, b.kind, sum(weight) AS lots, sum(value) AS value, count(DISTINCT supplier_key) AS suppliers
-        FROM awards a JOIN buyers b USING (buyer_id) WHERE year BETWEEN ? AND ?
+        FROM awards a JOIN buyers b USING (buyer_id) WHERE year BETWEEN ? AND ? {df}
         GROUP BY ALL ORDER BY value DESC NULLS LAST LIMIT 15
         """,
-        y,
+        y + d,
     )
     return dict(kpis=kpis, by_year=by_year, by_division=by_division, by_kind=by_kind,
                 top_suppliers=top_suppliers, top_buyers=top_buyers)
