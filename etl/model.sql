@@ -44,12 +44,15 @@ CREATE OR REPLACE MACRO geo_key(pc, loc) AS
 -- buyer's own reference matches and it follows within three years.
 CREATE OR REPLACE MACRO norm_title(t) AS trim(regexp_replace(lower(coalesce(t, '')), '[^a-z0-9]+', ' ', 'g'));
 
+-- ocid and buyer_id are rewritten below; keep the originals so re-running this file gives the same result
 ALTER TABLE notices ADD COLUMN IF NOT EXISTS source_ocid VARCHAR;
 UPDATE notices SET source_ocid = ocid WHERE source_ocid IS NULL;
+ALTER TABLE notices ADD COLUMN IF NOT EXISTS source_buyer_id VARCHAR;
+UPDATE notices SET source_buyer_id = buyer_id WHERE source_buyer_id IS NULL;
 
 CREATE OR REPLACE TABLE ocid_links AS
 WITH o AS (
-  SELECT source_ocid AS ocid, arg_max(buyer_id, published) AS buyer_id, min(published)::DATE AS first_pub,
+  SELECT source_ocid AS ocid, arg_max(source_buyer_id, (published, notice_id)) AS buyer_id, min(published)::DATE AS first_pub,
     bool_or(notice_type = 'AAO') AS has_cn, bool_or(notice_type = 'AGO') AS has_can, bool_or(notice_type = 'VBE') AS term,
     list(DISTINCT norm_title(title)) AS titles,
     list(DISTINCT tender_ref) FILTER (tender_ref IS NOT NULL AND NOT regexp_full_match(tender_ref, '\d{5,7}')) AS refs
@@ -104,19 +107,17 @@ GROUP BY 1 HAVING count(*) = 1;
 -- Municipal departments register separately ("Gemeente Amsterdam, afdeling ICT").
 -- Roll every organisation whose name identifies a municipality up to that
 -- municipality (CBS code), so peers are compared at municipality level.
-ALTER TABLE notices ADD COLUMN IF NOT EXISTS source_buyer_id VARCHAR;
-UPDATE notices SET source_buyer_id = buyer_id WHERE source_buyer_id IS NULL;
 ALTER TABLE buyers_raw ADD COLUMN IF NOT EXISTS source_buyer_id VARCHAR;
 UPDATE buyers_raw SET source_buyer_id = buyer_id WHERE source_buyer_id IS NULL;
 
 CREATE OR REPLACE TABLE buyer_map AS
 WITH named AS (
-  SELECT source_buyer_id, name,
+  SELECT source_buyer_id, name, n,
     -- "Gemeente Langedijk nu gemeente Dijk en Waard" belongs to the successor
     regexp_replace(lower(name), '^.*\snu\s+(gemeente\s+)?', 'gemeente ') AS lname
-  FROM (SELECT DISTINCT source_buyer_id, name FROM buyers_raw)
+  FROM (SELECT source_buyer_id, name, count(*) AS n FROM buyers_raw GROUP BY ALL)
 ), parsed AS (
-  SELECT source_buyer_id,
+  SELECT source_buyer_id, n,
     regexp_replace(trim(regexp_extract(lname,
       '^(?:college van b(?:urgemeester)?\s?(?:en|&)\s?w(?:ethouders)?\s+(?:van\s+)?(?:de\s+)?)?gemeente(?:bestuur)?\s+(?:van\s+)?([^,(|;]+?)(?:\s+-\s+.*|\s+–\s+.*|,.*|\(.*|\s*\|.*|;.*)?$', 1)),
       '\s*-\s*', '-', 'g') AS mname
@@ -125,11 +126,14 @@ WITH named AS (
   SELECT municipality_code, regexp_replace(lower(regexp_replace(name, '\s*\(gemeente\)$', '')), '\s*-\s*', '-', 'g') AS cname
   FROM municipalities
 ), matched AS (
-  SELECT p.source_buyer_id, mode(c.municipality_code) AS code
+  -- shared accounts (service centres, joint procurement) name several municipalities:
+  -- take the one named on most notices, lowest CBS code on a tie, so rebuilds are reproducible
+  SELECT p.source_buyer_id, c.municipality_code AS code
   FROM parsed p JOIN cbs c
     ON c.cname = CASE p.mname WHEN 'den haag' THEN '''s-gravenhage' WHEN 'den bosch' THEN '''s-hertogenbosch'
                               ELSE replace(p.mname, 'demierden', 'de mierden') END
-  WHERE p.mname <> '' GROUP BY 1
+  WHERE p.mname <> '' GROUP BY 1, 2
+  QUALIFY row_number() OVER (PARTITION BY p.source_buyer_id ORDER BY sum(p.n) DESC, c.municipality_code) = 1
 )
 SELECT source_buyer_id, code AS municipality_code, 'GM:' || code AS buyer_id FROM matched;
 
@@ -139,10 +143,20 @@ UPDATE notices SET buyer_id = coalesce((SELECT buyer_id FROM buyer_map m WHERE m
 -- ---------------------------------------------------------------- buyers
 CREATE OR REPLACE TABLE buyers AS
 WITH latest AS (
-  SELECT DISTINCT ON (buyer_id) * FROM buyers_raw ORDER BY buyer_id, published DESC, notice_id DESC
+  SELECT DISTINCT ON (buyer_id) * FROM buyers_raw
+  ORDER BY buyer_id, published DESC, notice_id DESC, source_buyer_id, name, postal_code
 ), attrs AS (
-  SELECT buyer_id, mode(ca_type) AS ca_type, mode(cofog) AS cofog, count(DISTINCT source_buyer_id) AS n_units
-  FROM buyers_raw GROUP BY buyer_id
+  -- most common value; ties go to the alphabetically first
+  SELECT buyer_id,
+    arg_max(ca_type, (n_ca, -rank_ca)) FILTER (ca_type IS NOT NULL) AS ca_type,
+    arg_max(cofog, (n_cofog, -rank_cofog)) FILTER (cofog IS NOT NULL) AS cofog,
+    count(DISTINCT source_buyer_id) AS n_units
+  FROM (
+    SELECT buyer_id, source_buyer_id, ca_type, cofog,
+      count(*) OVER (PARTITION BY buyer_id, ca_type) AS n_ca, dense_rank() OVER (PARTITION BY buyer_id ORDER BY ca_type) AS rank_ca,
+      count(*) OVER (PARTITION BY buyer_id, cofog) AS n_cofog, dense_rank() OVER (PARTITION BY buyer_id ORDER BY cofog) AS rank_cofog
+    FROM buyers_raw)
+  GROUP BY buyer_id
 ), base AS (
   SELECT l.buyer_id,
          CASE WHEN l.buyer_id LIKE 'GM:%' THEN 'Gemeente ' || regexp_replace(mu.name, '\s*\(gemeente\)$', '') ELSE l.name END AS name,
@@ -190,14 +204,14 @@ WITH n AS (
   SELECT ocid,
     min(published)::DATE AS first_published,
     max(published)::DATE AS last_published,
-    arg_max(buyer_id, published) AS buyer_id,
-    arg_max(title, published) AS title,
-    coalesce(arg_max(cpv, published) FILTER (notice_type IN ('AAO','AGO')), arg_max(cpv, published)) AS cpv,
-    coalesce(arg_max(cpv_label, published) FILTER (notice_type IN ('AAO','AGO')), arg_max(cpv_label, published)) AS cpv_label,
-    arg_max(category, published) AS category,
-    coalesce(arg_max(procedure, published) FILTER (notice_type IN ('AAO','AGO')), arg_max(procedure, published)) AS procedure,
-    arg_max(scope, published) AS scope,
-    arg_max(nature, published) AS nature,
+    arg_max(buyer_id, (published, notice_id)) AS buyer_id,
+    arg_max(title, (published, notice_id)) AS title,
+    coalesce(arg_max(cpv, (published, notice_id)) FILTER (notice_type IN ('AAO','AGO')), arg_max(cpv, (published, notice_id))) AS cpv,
+    coalesce(arg_max(cpv_label, (published, notice_id)) FILTER (notice_type IN ('AAO','AGO')), arg_max(cpv_label, (published, notice_id))) AS cpv_label,
+    arg_max(category, (published, notice_id)) AS category,
+    coalesce(arg_max(procedure, (published, notice_id)) FILTER (notice_type IN ('AAO','AGO')), arg_max(procedure, (published, notice_id))) AS procedure,
+    arg_max(scope, (published, notice_id)) AS scope,
+    arg_max(nature, (published, notice_id)) AS nature,
     max(est_value) AS est_value,
     max(tender_deadline)::DATE AS tender_deadline,
     bool_or(notice_type = 'AAO') AS has_contract_notice,
@@ -207,9 +221,9 @@ WITH n AS (
     bool_or(notice_type = 'VAK') AS prior_info,
     (min(published) FILTER (notice_type = 'AAO'))::DATE AS contract_notice_date,
     (min(published) FILTER (notice_type = 'AGO'))::DATE AS award_notice_date,
-    arg_min(notice_id, published) FILTER (notice_type = 'AAO') AS contract_notice_id,
-    arg_max(notice_id, published) FILTER (notice_type = 'AGO') AS award_notice_id,
-    arg_max(notice_id, published) AS last_notice_id,
+    arg_min(notice_id, (published, notice_id)) FILTER (notice_type = 'AAO') AS contract_notice_id,
+    arg_max(notice_id, (published, notice_id)) FILTER (notice_type = 'AGO') AS award_notice_id,
+    arg_max(notice_id, (published, notice_id)) AS last_notice_id,
     count(*) AS n_notices
   FROM n GROUP BY ocid
 )
@@ -244,12 +258,13 @@ WITH r AS (
     AND NOT regexp_matches(coalesce(ar.supplier_name_key, ''), '^(zie |see |n a$|nvt$|n v t$|na$|meerdere|diverse|various|onbekend|niet |geen |nog niet|x$)')
 ), a AS (
   SELECT r.*, n.published::DATE AS published,
-    row_number() OVER (PARTITION BY r.ocid, r.lot_id, r.supplier_key ORDER BY n.published DESC, r.notice_id DESC) AS rn
+    row_number() OVER (PARTITION BY r.ocid, r.lot_id, r.supplier_key ORDER BY n.published DESC, r.notice_id DESC, r.award_id, r.value DESC NULLS LAST, r.supplier_name) AS rn
   FROM r JOIN notices n USING (notice_id)
 ), d AS (
   SELECT * EXCLUDE (rn) FROM a WHERE rn = 1
 ), lotcpv AS (
-  SELECT DISTINCT ON (ocid, lot_id) ocid, lot_id, cpv, title AS lot_title FROM lots ORDER BY ocid, lot_id, notice_id DESC
+  SELECT DISTINCT ON (ocid, lot_id) ocid, lot_id, cpv, title AS lot_title FROM lots
+  ORDER BY ocid, lot_id, notice_id DESC, cpv, title
 )
 SELECT d.notice_id, d.ocid, d.lot_id, d.award_id, d.supplier_key, d.supplier_kvk, d.supplier_name, d.published,
   year(d.published) AS year,
@@ -300,10 +315,16 @@ FROM y;
 -- ---------------------------------------------------------------- suppliers
 CREATE OR REPLACE TABLE suppliers AS
 WITH names AS (
-  SELECT supplier_key, mode(supplier_name) AS name, any_value(supplier_kvk) AS kvk FROM awards GROUP BY 1
+  SELECT supplier_key, arg_max(supplier_name, (n, -rank)) AS name, any_value(supplier_kvk) AS kvk
+  FROM (SELECT supplier_key, supplier_name, supplier_kvk,
+          count(*) OVER (PARTITION BY supplier_key, supplier_name) AS n,
+          dense_rank() OVER (PARTITION BY supplier_key ORDER BY supplier_name) AS rank
+        FROM awards WHERE supplier_name IS NOT NULL)
+  GROUP BY 1
 ), addr AS (
   SELECT DISTINCT ON (supplier_key) supplier_key, locality, postal_code, country
-  FROM suppliers_raw WHERE supplier_key IS NOT NULL ORDER BY supplier_key, published DESC
+  FROM suppliers_raw WHERE supplier_key IS NOT NULL
+  ORDER BY supplier_key, published DESC, notice_id DESC, postal_code NULLS LAST, locality NULLS LAST
 ), sme AS (
   SELECT supplier_key, bool_or(sme) AS sme FROM suppliers_raw GROUP BY 1
 )
@@ -323,7 +344,7 @@ FROM procedures GROUP BY 1;
 CREATE OR REPLACE TABLE buyer_size AS
 WITH act AS (
   SELECT b.buyer_id, b.kind, bp.population, coalesce(a.n_procedures, 0) AS n_procedures,
-    ntile(3) OVER (PARTITION BY b.kind ORDER BY coalesce(a.n_procedures, 0)) AS t
+    ntile(3) OVER (PARTITION BY b.kind ORDER BY coalesce(a.n_procedures, 0), b.buyer_id) AS t
   FROM buyers b LEFT JOIN buyer_activity a USING (buyer_id) LEFT JOIN buyer_population bp USING (buyer_id)
 )
 SELECT buyer_id, population, n_procedures,
@@ -349,27 +370,29 @@ SELECT a.*, 'all' AS period FROM awards a;
 
 CREATE OR REPLACE TABLE buyer_supplier_cells AS
 SELECT buyer_id, division, period, supplier_key,
-  sum(weight) AS w, count(DISTINCT ocid) AS n_procedures, sum(value) AS value
+  -- rounded: float summation order must not break ties (top supplier) or thresholds between rebuilds
+  round(sum(weight), 9) AS w, count(DISTINCT ocid) AS n_procedures, round(sum(value), 2) AS value
 FROM award_periods WHERE division IS NOT NULL GROUP BY ALL;
 
 CREATE OR REPLACE TABLE concentration AS
 WITH cell AS (
+  -- from the unrounded weights: summing the rounded per-supplier shares would turn 5 lots into 4.999999999
   SELECT buyer_id, division, period,
-    sum(w) AS n_lots, count(*) AS n_suppliers, sum(n_procedures) AS n_supplier_procs,
-    sum(value) AS value_known
-  FROM buyer_supplier_cells GROUP BY ALL
+    round(sum(weight), 9) AS n_lots, count(DISTINCT supplier_key) AS n_suppliers,
+    round(sum(value), 2) AS value_known
+  FROM award_periods WHERE division IS NOT NULL GROUP BY ALL
 ), top AS (
   SELECT DISTINCT ON (buyer_id, division, period) buyer_id, division, period,
     supplier_key AS top_supplier, w AS top_w, value AS top_value
-  FROM buyer_supplier_cells ORDER BY buyer_id, division, period, w DESC, value DESC NULLS LAST
+  FROM buyer_supplier_cells ORDER BY buyer_id, division, period, w DESC, value DESC NULLS LAST, supplier_key
 ), hhi AS (
-  SELECT c.buyer_id, c.division, c.period, sum((s.w / c.n_lots) ^ 2) AS hhi
+  SELECT c.buyer_id, c.division, c.period, round(sum((s.w / c.n_lots) ^ 2), 9) AS hhi
   FROM buyer_supplier_cells s JOIN cell c USING (buyer_id, division, period) GROUP BY ALL
 ), quality AS (
   SELECT buyer_id, division, period,
     count(DISTINCT ocid) AS n_procedures,
-    sum(weight * has_kvk::INT) / sum(weight) AS kvk_coverage,
-    sum(weight * (value IS NOT NULL)::INT) / sum(weight) AS value_coverage
+    round(sum(weight * has_kvk::INT) / sum(weight), 9) AS kvk_coverage,
+    round(sum(weight * (value IS NOT NULL)::INT) / sum(weight), 9) AS value_coverage
   FROM award_periods GROUP BY ALL
 ), gaps AS (
   SELECT pr.buyer_id, pr.division, per.period,
@@ -489,9 +512,9 @@ WITH per AS (
 ), loc AS (
   -- where the winners are based, in (fractional) lots
   SELECT buyer_id, period, CASE WHEN grouping(div) = 1 THEN '*' ELSE div END AS division,
-    sum(weight) FILTER (located) AS w_located,
-    coalesce(sum(weight) FILTER (local), 0) AS w_local,
-    coalesce(sum(weight) FILTER (same_province), 0) AS w_province
+    round(sum(weight) FILTER (located), 9) AS w_located,
+    round(coalesce(sum(weight) FILTER (local), 0), 9) AS w_local,
+    round(coalesce(sum(weight) FILTER (same_province), 0), 9) AS w_province
   FROM ap GROUP BY GROUPING SETS ((buyer_id, period, div), (buyer_id, period))
 ), pp AS (
   SELECT pr.buyer_id, coalesce(pr.division, '?') AS div, per.period, pr.status
@@ -538,8 +561,8 @@ LEFT JOIN d USING (division, period, kind, size_band);
 
 -- ---------------------------------------------------------------- relationships
 CREATE OR REPLACE TABLE edges AS
-SELECT buyer_id, supplier_key, sum(weight) AS w, count(DISTINCT ocid) AS n_procedures, sum(value) AS value,
-  min(year) AS first_year, max(year) AS last_year, list(DISTINCT division) AS divisions
+SELECT buyer_id, supplier_key, round(sum(weight), 9) AS w, count(DISTINCT ocid) AS n_procedures, round(sum(value), 2) AS value,
+  min(year) AS first_year, max(year) AS last_year, list(DISTINCT division ORDER BY division) AS divisions
 FROM awards GROUP BY ALL;
 
 DROP TABLE award_periods;
