@@ -5,6 +5,8 @@ purchasing is compared with similar buyers, and where the published record is in
 Source: [TenderNed open data](https://www.tenderned.nl/cms/nl/aanbesteden-in-cijfers/datasets-aanbestedingen)
 (OCDS JSON, 2016 onwards), enriched with PDOK (municipality, province) and CBS (population).
 
+![Overview page: procedures by year and outcome, and awarded lots by category](docs/overview.png)
+
 ## Quick start
 
 Requirements: [uv](https://docs.astral.sh/uv/) (Python 3.12+), [pnpm](https://pnpm.io/installation) (Node 20+),
@@ -108,3 +110,16 @@ The in-app page "How to read this" is the full reference. Key choices:
 
 Netherlands only, TenderNed only. The model keeps country-specific parts (buyer typing,
 CBS population, PDOK) separate so other countries (for example TED data) can be added later.
+
+## Disclaimer
+
+This is an independent project, not affiliated with TenderNed, PIANOo or any other government body.
+The figures describe patterns in published notices and how complete those notices are. They are not
+findings of misconduct, irregularity or breaches of procurement law by any buyer or supplier. The source
+data contains errors and the processing adds simplifications of its own; check the original notice on
+TenderNed before relying on a figure.
+
+## License
+
+[MIT](LICENSE). The code is provided as is, without warranty. The data is not part of this repository;
+TenderNed, PDOK and CBS publish it under their own open-data terms.

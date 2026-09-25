@@ -69,8 +69,8 @@ export default function Overview() {
       <div className="page-head">
         <h1>Who wins public contracts in the Netherlands</h1>
         <p className="lede">
-          Every procurement notice published on TenderNed since 2016: who buys, who wins, and how completely the
-          outcome is documented. A concentrated pattern is a reason to look closer, not a finding in itself.
+          Procurement notices published on TenderNed since 2016, with buyers, winning suppliers and whether an outcome was
+          published. A concentrated pattern can have ordinary causes and is not evidence of wrongdoing.
         </p>
       </div>
 

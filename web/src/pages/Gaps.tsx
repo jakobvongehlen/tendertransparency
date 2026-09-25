@@ -53,7 +53,7 @@ export default function Gaps() {
       <div className="page-head">
         <h1>Where the record is incomplete</h1>
         <p className="lede">
-          A comparison is only as good as the data behind it. Here: procedures whose outcome was never published on TenderNed, and
+          Procedures whose outcome was never published on TenderNed, and
           awards that name no identifiable supplier or no value. National (below-threshold) procedures have lighter publication duties,
           so a missing award notice is not necessarily a breach.
         </p>

@@ -71,11 +71,11 @@ export default function Competition() {
   return (
     <div className={`page ${loading ? 'stale' : ''}`}>
       <div className="page-head">
-        <h1>How much competition is there?</h1>
+        <h1>Competition</h1>
         <p className="lede">
-          Concentration shows who wins; this page shows how many firms competed. A lot that draws only one tender gives the buyer
-          no real choice, and a direct award, where the buyer negotiates with a company of its choosing without announcing the contract, involves no open competition at all. Both have ordinary causes:
-          niche markets, urgent work, follow-up assignments. Compare with similar buyers before drawing conclusions.
+          How many firms tendered for each lot. A lot that draws only one tender leaves the buyer
+          no choice, and a direct award, where the buyer negotiates with a company of its choosing without announcing the contract, involves no open competition at all. Both have ordinary causes,
+          such as niche markets, urgent work and follow-up assignments, so compare with similar buyers first.
         </p>
       </div>
       <div className="filters">

@@ -61,7 +61,7 @@ export function CellDrilldown({ buyerId, division, period, onClose, showBuyer = 
       <div>
         <h2>{showBuyer && data ? <>{data.buyer.name}: </> : null}{label}, {period === 'all' ? 'all years' : period}</h2>
         <p>
-          What lies behind this comparison: who won, how the lots were competed, and when.
+          The suppliers and lots behind this comparison.
           {showBuyer && <> <Link to={`/buyers/${encodeURIComponent(buyerId)}`}>Buyer profile</Link>{' · '}</>}
           {!showBuyer && ' '}
           <Link to={`/compare?division=${division}&kind=${encodeURIComponent(data?.buyer.kind ?? '')}&period=${period}&buyer=${encodeURIComponent(buyerId)}`}>Compare with peers</Link>
@@ -128,9 +128,9 @@ export function CellDrilldown({ buyerId, division, period, onClose, showBuyer = 
 
       {obs.length > 0 && (
         <div className="observations">
-          <h3>What stands out</h3>
+          <h3>Notes</h3>
           <ul>{obs.map((o, i) => <li key={i}>{o}</li>)}</ul>
-          <p className="small muted">Observations from the published data, not conclusions. Specialised markets, framework agreements and follow-up work can all explain them.</p>
+          <p className="small muted">Based on published notices only. Specialised markets, framework agreements and follow-up work can explain any of these.</p>
         </div>
       )}
 

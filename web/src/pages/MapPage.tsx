@@ -114,7 +114,7 @@ export default function MapPage() {
       <div className="page-head">
         <h1>Map of municipalities</h1>
         <p className="lede">
-          How municipalities compare across the country. Pick what to colour by; grey means no data or too few awards to show a
+          Pick a measure to colour municipalities by. Grey means no data or too few awards to show a
           meaningful value. Large and small municipalities differ in what they buy, so use <Link to="/compare">Compare peers</Link> for
           like-for-like comparisons.
         </p>

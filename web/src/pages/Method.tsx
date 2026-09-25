@@ -6,8 +6,8 @@ export default function Method() {
       <div className="prose">
         <h1>How to read this dashboard</h1>
         <p>
-          The dashboard puts each award pattern in context: who receives the awards, how that compares with similar buyers
-          purchasing similar things, and whether the data is complete enough to support the comparison. A concentrated pattern
+          For each buyer the dashboard shows who receives the awards, how that compares with similar buyers purchasing
+          similar things, and whether the data is complete enough for the comparison. A concentrated pattern
           is a reason to ask questions, never proof of wrongdoing or dependence.
         </p>
 
@@ -72,8 +72,16 @@ export default function Method() {
 
         <h2>Refreshing the data</h2>
         <p>
-          TenderNed publishes a new dataset every six months. Download the JSON files into <code>data/raw/</code> and run
-          <code>etl/ingest.py</code>, <code>etl/enrich.py</code> and <code>etl/model.py</code>.
+          TenderNed publishes a new dataset every six months. Stop the API and run <code>./setup.sh --no-web</code>.
+        </p>
+
+        <h2>Disclaimer</h2>
+        <p>
+          This is an independent project, not affiliated with TenderNed, PIANOo or any other government body. The figures describe
+          patterns in published notices and how complete those notices are. They are not findings of misconduct, irregularity or
+          breaches of procurement law by any buyer or supplier named here. Source data contains errors, and the processing described
+          above adds simplifications of its own. Check the original notice on TenderNed before relying on a figure. The dashboard is
+          provided as is, without any warranty of accuracy or completeness.
         </p>
       </div>
     </div>
