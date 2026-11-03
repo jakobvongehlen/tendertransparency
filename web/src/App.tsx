@@ -131,7 +131,7 @@ export default function App() {
       <div className="shell">
         <aside className="nav">
           <div className="brand">
-            <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden><rect width="32" height="32" rx="6" fill="#2a3b63" /><rect x="7" y="17" width="4" height="8" rx="1" fill="#86b6ef" /><rect x="14" y="11" width="4" height="14" rx="1" fill="#86b6ef" /><rect x="21" y="6" width="4" height="19" rx="1" fill="#ec835a" /></svg>
+            <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden><rect width="32" height="32" rx="7" fill="var(--brand)" /><rect x="7" y="17" width="4" height="8" rx="1" fill="#fff" fillOpacity=".75" /><rect x="14" y="11" width="4" height="14" rx="1" fill="#fff" fillOpacity=".75" /><rect x="21" y="6" width="4" height="19" rx="1" fill="#fff" /></svg>
             <div>Tender Transparency<small>Public contracts in the Netherlands</small></div>
           </div>
           <nav aria-label="Main">

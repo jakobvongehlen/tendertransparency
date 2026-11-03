@@ -63,7 +63,8 @@ export default function Compare() {
     series: [
       ...groups.map((g) => ({
         name: g.name, type: 'scatter', symbolSize: 9,
-        itemStyle: { color: g.color, borderColor: t.surface, borderWidth: 2, opacity: 0.9 },
+        // buyers that cannot be compared recede behind the comparable ones
+        itemStyle: { color: g.color, borderColor: t.surface, borderWidth: 2, opacity: g.color === t.muted ? 0.45 : 0.9 },
         data: plotted.filter((r) => r.buyer_id !== buyer && g.pick(r)).map((r) => ({ value: xy(r), r })),
         emphasis: { scale: 1.6 },
       })),
