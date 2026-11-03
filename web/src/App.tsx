@@ -135,14 +135,24 @@ export default function App() {
             <div>Tender Transparency<small>Public contracts in the Netherlands</small></div>
           </div>
           <nav aria-label="Main">
-            <NavLink to="/" end>Overview</NavLink>
-            <NavLink to="/buyers">Buyers</NavLink>
-            <NavLink to="/compare">Compare peers</NavLink>
-            <NavLink to="/patterns">Concentration patterns</NavLink>
-            <NavLink to="/competition">Competition</NavLink>
-            <NavLink to="/map">Map</NavLink>
-            <NavLink to="/gaps">Information gaps</NavLink>
-            <NavLink to="/method">How to read this</NavLink>
+            {/* grouped by kind of page: browse the data, analyse it, learn how to read it */}
+            <div className="nav-group" role="group" aria-labelledby="nav-explore">
+              <span className="nav-label" id="nav-explore">Explore</span>
+              <NavLink to="/" end>Overview</NavLink>
+              <NavLink to="/buyers">Buyers</NavLink>
+              <NavLink to="/map">Map</NavLink>
+            </div>
+            <div className="nav-group" role="group" aria-labelledby="nav-analyse">
+              <span className="nav-label" id="nav-analyse">Analyse</span>
+              <NavLink to="/compare">Compare peers</NavLink>
+              <NavLink to="/patterns">Concentration patterns</NavLink>
+              <NavLink to="/competition">Competition</NavLink>
+              <NavLink to="/gaps">Information gaps</NavLink>
+            </div>
+            <div className="nav-group" role="group" aria-labelledby="nav-help">
+              <span className="nav-label" id="nav-help">Help</span>
+              <NavLink to="/method">How to read this</NavLink>
+            </div>
           </nav>
           <div className="foot">
             Source: <a href="https://www.tenderned.nl/cms/nl/aanbesteden-in-cijfers/datasets-aanbestedingen" target="_blank" rel="noreferrer">TenderNed open data</a>

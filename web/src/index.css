@@ -154,7 +154,9 @@ p { margin: 0; text-wrap: pretty; }
 }
 .brand { display: flex; gap: 10px; align-items: center; color: var(--ink); font-weight: 700; font-size: 0.9375rem; line-height: 1.3; }
 .brand small { display: block; font-weight: 400; color: var(--nav-muted); font-size: var(--fs-meta); }
-.nav nav { display: flex; flex-direction: column; gap: 2px; }
+.nav nav { display: flex; flex-direction: column; gap: 18px; }
+.nav-group { display: flex; flex-direction: column; gap: 2px; }
+.nav-label { font-size: var(--fs-meta); font-weight: 600; color: var(--nav-muted); padding: 0 10px 4px; }
 .nav nav a {
   color: var(--nav-ink); padding: 8px 10px; border-radius: 6px; font-size: var(--fs-ui);
   display: flex; justify-content: space-between;
@@ -316,7 +318,9 @@ button.link { background: none; border: 0; padding: 0; color: var(--link); font:
 @media (max-width: 860px) {
   .shell { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   .nav { position: static; height: auto; padding: 14px 16px; gap: 10px; }
-  .nav nav { flex-direction: row; flex-wrap: wrap; }
+  .nav nav { flex-direction: row; flex-wrap: wrap; gap: 2px; }
+  .nav-group { display: contents; }
+  .nav-label { display: none; }
   .nav .foot { display: none; }
   .topbar { padding: 10px 16px; }
   .page { padding: 20px 16px 48px; }
