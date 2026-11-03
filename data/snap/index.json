@@ -1,0 +1,10 @@
+{
+  "meta": "s0.json",
+  "overview": "s1.json",
+  "buyers?limit=500": "s2.json",
+  "peers?division=45&kind=Municipality&period=2022-2024": "s3.json",
+  "flags?limit=500&only_unusual=true&persistent=false": "s4.json",
+  "competition?period=2022-2024": "s5.json",
+  "map?period=2022-2024": "s6.json",
+  "gaps": "s7.json"
+}

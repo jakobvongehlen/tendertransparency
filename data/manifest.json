@@ -1,0 +1,23 @@
+{
+  "built": "2026-11-03T22:32:44+00:00",
+  "boundary_year": "2026",
+  "tables": {
+    "awards": 7703316,
+    "bids": 590250,
+    "buyer_activity": 18008,
+    "buyer_supplier_cells": 1885795,
+    "buyers": 109825,
+    "competition_scores": 885789,
+    "concentration": 774368,
+    "cpv_divisions": 1194,
+    "data_cutoff": 209,
+    "edges": 928585,
+    "flags": 430866,
+    "lot_competition": 722701,
+    "notices": 3625442,
+    "periods": 506,
+    "persistence": 67098,
+    "procedures": 5459624,
+    "suppliers": 1142972
+  }
+}
