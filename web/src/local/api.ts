@@ -3,7 +3,12 @@
  * route(path, params) is what getJSON() calls instead of fetch('/api/...').
  * Keep this in sync with api/main.py when queries change.
  */
-import { DATA, ensure, lit, one, q, type Row } from './db'
+import { DATA, ensure, getManifest, lit, one, q, warm, type Row } from './db'
+
+export { onProgress, type Progress } from './db'
+
+/** tables behind the overview filters and most profile pages, loaded in the background after first paint */
+export const warmUp = () => warm(['awards', 'procedures', 'buyers', 'suppliers', 'cpv_divisions', 'data_cutoff'])
 
 const NOTICE_URL = 'https://www.tenderned.nl/aankondigingen/overzicht/'
 
@@ -519,9 +524,6 @@ async function competition(p: P) {
 }
 
 // ------------------------------------------------------------------ map
-let manifest: Promise<Row> | null = null // { built, boundary_year, tables }
-const getManifest = () => (manifest ??= fetch(`${DATA}manifest.json`).then((r): Promise<Row> => (r.ok ? r.json() : Promise.resolve({}))))
-
 async function boundaries() {
   const res = await fetch(`${DATA}municipalities.geojson`)
   if (!res.ok) throw new HttpError(404, 'municipal boundaries not exported')

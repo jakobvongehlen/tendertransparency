@@ -1,5 +1,6 @@
 """Read-only JSON API over data/tenders.duckdb (built by etl/)."""
 
+import os
 from pathlib import Path
 
 import duckdb
@@ -8,9 +9,9 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 ROOT = Path(__file__).resolve().parent.parent
-DB = ROOT / "data" / "tenders.duckdb"
+DB = Path(os.environ.get("TT_DB", ROOT / "data" / "tenders.duckdb"))  # TT_DB: use another database file
 DIST = ROOT / "web" / "dist"
-BOUNDARIES = sorted((ROOT / "data" / "cache").glob("municipalities_*.geojson"))
+BOUNDARIES = sorted((DB.parent / "cache").glob("municipalities_*.geojson"))
 NOTICE_URL = "https://www.tenderned.nl/aankondigingen/overzicht/"
 
 app = FastAPI(title="Tender Transparency NL")

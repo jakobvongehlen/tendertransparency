@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, createContext, useContext } from 'react'
 import { NavLink, Route, Routes, useNavigate, useLocation } from 'react-router-dom'
-import { getJSON, useApi, type Meta, type Row, STATIC } from './api'
+import { getJSON, onWaiting, useApi, type Meta, type Row, STATIC } from './api'
 import { num } from './format'
 import Overview from './pages/Overview'
 import Buyers from './pages/Buyers'
@@ -17,6 +17,40 @@ import Method from './pages/Method'
 /** optional legal links (set at build time, e.g. by scripts/deploy-pages.sh) */
 const IMPRINT = import.meta.env.VITE_IMPRINT_URL as string | undefined
 const PRIVACY = import.meta.env.VITE_PRIVACY_URL as string | undefined
+
+/** Static build only: progress while the in-browser database downloads (first visit), so it never looks stuck. */
+function DataLoading() {
+  const [p, setP] = useState<{ active: boolean; loaded: number; total: number; items: { name: string; done: boolean }[] } | null>(null)
+  const [waitingN, setWaitingN] = useState(0)
+  useEffect(() => {
+    let off = () => {}
+    let cancelled = false
+    import('./local/api').then((m) => {
+      if (cancelled) return
+      off = m.onProgress(setP)
+      // after first paint, prepare the data behind the filters unless the visitor asked to save data
+      const conn = (navigator as any).connection
+      if (!conn?.saveData && !/(^|-)2g$/.test(conn?.effectiveType ?? '')) setTimeout(m.warmUp, 1200)
+    })
+    const off2 = onWaiting(setWaitingN)
+    return () => { cancelled = true; off(); off2() }
+  }, [])
+  if (!p?.active) return null
+  const pct = p.total ? Math.min(99, Math.round((100 * p.loaded) / p.total)) : 0
+  if (!waitingN) return <div className="dl-pill" role="status">Preparing data for filters · {pct}%</div>
+  const current = p.items.find((i) => !i.done)?.name
+  return (
+    <div className="dl-card" role="status" aria-live="polite">
+      <div className="dl-title">Loading the data into your browser</div>
+      <div className="dl-sub">This dashboard runs entirely on your device. The first load takes a moment; after that, filters are instant.</div>
+      <div className="dl-bar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>
+      <div className="dl-meta">
+        <span>{(p.loaded / 1e6).toFixed(1)} of {Math.max(1, Math.round(p.total / 1e6))} MB</span>
+        {current && <span>{current === 'database engine' ? 'starting the database engine' : `loading ${current.replace(/_/g, ' ')}`}</span>}
+      </div>
+    </div>
+  )
+}
 
 const MetaContext = createContext<Meta | null>(null)
 export const useMeta = () => useContext(MetaContext)
@@ -136,6 +170,7 @@ export default function App() {
             <Route path="/method" element={<Method />} />
             <Route path="*" element={<div className="page"><h1>Page not found</h1><p>Use the menu or search to find a buyer or supplier.</p></div>} />
           </Routes>
+          {STATIC && <DataLoading />}
           {(IMPRINT || PRIVACY) && (
             <footer className="legal-mobile">
               {IMPRINT && <a href={IMPRINT}>Imprint</a>}
