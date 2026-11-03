@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { STATIC } from '../api'
 import { useMeta } from '../App'
+import { longDate } from '../format'
 
 export default function Method() {
   const meta = useMeta()
@@ -75,7 +76,7 @@ export default function Method() {
 
         <h2>Refreshing the data</h2>
         <p>
-          TenderNed publishes a new dataset every six months{meta && <>; this version includes notices up to {meta.cutoff}</>}.
+          TenderNed publishes a new dataset every six months{meta && <>; this version includes notices up to {longDate(meta.cutoff)}</>}.
           {!STATIC && <> To refresh a local copy, stop the API and run <code>./setup.sh --no-web</code>.</>}
         </p>
 

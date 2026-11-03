@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, createContext, useContext } from 'react'
 import { NavLink, Route, Routes, useNavigate, useLocation } from 'react-router-dom'
 import { getJSON, onWaiting, useApi, type Meta, type Row, STATIC } from './api'
-import { num, place } from './format'
+import { longDate, num, place } from './format'
 import Overview from './pages/Overview'
 import Buyers from './pages/Buyers'
 import BuyerProfile from './pages/BuyerProfile'
@@ -155,8 +155,8 @@ export default function App() {
             </div>
           </nav>
           <div className="foot">
-            Source: <a href="https://www.tenderned.nl/cms/nl/aanbesteden-in-cijfers/datasets-aanbestedingen" target="_blank" rel="noreferrer">TenderNed open data</a>
-            {meta && <>, notices up to {meta.cutoff}</>}. Only procedures published on TenderNed are included.
+            Data: <a href="https://www.tenderned.nl/cms/nl/aanbesteden-in-cijfers/datasets-aanbestedingen" target="_blank" rel="noreferrer">TenderNed open data</a>
+            {meta && <>, notices up to {longDate(meta.cutoff)}</>}. Contracts never published on TenderNed, including most small ones, are not included.
             {(IMPRINT || PRIVACY) && (
               <div className="legal">
                 {IMPRINT && <a href={IMPRINT}>Imprint</a>}

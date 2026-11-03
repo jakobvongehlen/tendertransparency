@@ -163,7 +163,7 @@ p { margin: 0; text-wrap: pretty; }
 }
 .nav nav a:hover { background: color-mix(in srgb, var(--nav-active) 45%, transparent); color: var(--ink); text-decoration: none; }
 .nav nav a.active { background: var(--nav-active); color: var(--nav-active-ink); font-weight: 600; }
-.nav .foot { margin-top: auto; font-size: var(--fs-meta); color: var(--nav-muted); line-height: 1.45; }
+.nav .foot { margin-top: auto; font-size: var(--fs-meta); color: var(--nav-muted); line-height: 1.45; text-wrap: pretty; }
 .nav .foot a { color: var(--nav-ink); }
 
 .main { min-width: 0; }

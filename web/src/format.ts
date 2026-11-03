@@ -21,6 +21,13 @@ export const pct = (v: number | null | undefined, digits = 0) =>
 export const lots = (v: number | null | undefined) =>
   v === null || v === undefined ? '–' : Math.abs(v - Math.round(v)) < 0.05 ? nf.format(Math.round(v)) : num(v, 1)
 
+/** "2026-06-30" → "30 June 2026"; anything unparseable is shown as given. */
+export function longDate(iso: string | null | undefined) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? '')
+  if (!m) return iso ?? ''
+  return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+}
+
 export const bandLabel = (b: string | null | undefined) => (b ? b.replace(/^\d:\s*/, '') : '–')
 
 /** TenderNed procedure types in English; the Dutch term stays available as a tooltip. */
