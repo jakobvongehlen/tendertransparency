@@ -71,6 +71,25 @@ For frontend development, run `pnpm dev` in `web/` (proxies `/api` to port 8000)
      same tables and the same flags.
 5. **Frontend** (`web/`). `pnpm install --frozen-lockfile && pnpm build` into `web/dist/`, served by the API.
 
+## Static build (GitHub Pages, no server)
+
+The dashboard can also run entirely in the browser: the same SQL runs in [DuckDB-WASM](https://duckdb.org/docs/api/wasm/overview)
+against Parquet exports of the model tables, so it can be hosted as static files (for example on GitHub Pages).
+
+```bash
+./setup.sh --no-web                          # build data/tenders.duckdb as usual
+uv run python etl/export_static.py           # ~24 MB of Parquet + boundaries into web/public/data/
+cd web && pnpm build:static                  # web/dist/, base path /tendertransparency/ (override with BASE=/)
+pnpm preview:static                          # check it locally
+sh ../scripts/deploy-pages.sh                # publish web/dist to the gh-pages branch
+```
+
+- `web/src/local/api.ts` is a line-by-line port of `api/main.py`; keep the two in sync when queries change.
+- Tables are downloaded on first use and loaded into memory, so each page only fetches what it needs.
+- The Parquet extension is served from the site itself (`scripts/fetch-duckdb-ext.sh`); the browser makes no
+  requests to third parties.
+- The normal `pnpm build` (served by the FastAPI app) is unchanged and does not include DuckDB-WASM.
+
 ## Refreshing the data
 
 TenderNed publishes a new dataset every six months. Stop the API and run `./setup.sh --no-web`.

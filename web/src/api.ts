@@ -2,11 +2,18 @@ import { useEffect, useRef, useState } from 'react'
 
 export type Row = Record<string, any>
 
+/** true in the static build (`pnpm build:static`): queries run in DuckDB-WASM in the browser, no API server */
+export const STATIC = import.meta.env.VITE_STATIC === '1'
+
 export async function getJSON<T = any>(path: string, params?: Record<string, unknown>): Promise<T> {
   const qs = new URLSearchParams()
   Object.entries(params ?? {}).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== '') qs.set(k, String(v))
   })
+  if (STATIC) {
+    const { route } = await import('./local/api')
+    return route(path, Object.fromEntries(qs)) as Promise<T>
+  }
   const res = await fetch(`/api/${path}${qs.size ? `?${qs}` : ''}`)
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
   return res.json()
