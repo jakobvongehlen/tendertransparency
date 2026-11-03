@@ -7,6 +7,9 @@
 set -eu
 cd "$(dirname "$0")/.."
 [ -f web/public/data/manifest.json ] || { echo "run etl/export_static.py first"; exit 1; }
+# legal links shown in the dashboard footer (leave empty to hide)
+export VITE_IMPRINT_URL="${VITE_IMPRINT_URL-https://jakobvongehlen.me/imprint.html}"
+export VITE_PRIVACY_URL="${VITE_PRIVACY_URL-https://jakobvongehlen.me/privacy.html#tender-transparency}"
 (cd web && pnpm build:static)
 TMP=$(mktemp -d)
 cp -R web/dist/. "$TMP/"

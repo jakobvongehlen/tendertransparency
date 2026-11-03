@@ -287,3 +287,9 @@ button.link { background: none; border: 0; padding: 0; color: var(--link); font:
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 .nowrap { white-space: nowrap; }
+
+.foot .legal { margin-top: 0.6rem; }
+.foot .legal a { color: inherit; }
+.legal-mobile { display: none; padding: 0 16px 32px; font-size: 13px; color: var(--muted, #667); }
+.legal-mobile a { color: inherit; }
+@media (max-width: 860px) { .legal-mobile { display: block; } }

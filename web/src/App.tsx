@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, createContext, useContext } from 'react'
 import { NavLink, Route, Routes, useNavigate, useLocation } from 'react-router-dom'
-import { getJSON, useApi, type Meta, type Row } from './api'
+import { getJSON, useApi, type Meta, type Row, STATIC } from './api'
 import { num } from './format'
 import Overview from './pages/Overview'
 import Buyers from './pages/Buyers'
@@ -13,6 +13,10 @@ import Competition from './pages/Competition'
 import MapPage from './pages/MapPage'
 import Procedure from './pages/Procedure'
 import Method from './pages/Method'
+
+/** optional legal links (set at build time, e.g. by scripts/deploy-pages.sh) */
+const IMPRINT = import.meta.env.VITE_IMPRINT_URL as string | undefined
+const PRIVACY = import.meta.env.VITE_PRIVACY_URL as string | undefined
 
 const MetaContext = createContext<Meta | null>(null)
 export const useMeta = () => useContext(MetaContext)
@@ -104,11 +108,20 @@ export default function App() {
           <div className="foot">
             Source: <a href="https://www.tenderned.nl/cms/nl/aanbesteden-in-cijfers/datasets-aanbestedingen" target="_blank" rel="noreferrer">TenderNed open data</a>
             {meta && <>, notices up to {meta.cutoff}</>}. Only procedures published on TenderNed are included.
+            {(IMPRINT || PRIVACY) && (
+              <div className="legal">
+                {IMPRINT && <a href={IMPRINT}>Imprint</a>}
+                {IMPRINT && PRIVACY && ' · '}
+                {PRIVACY && <a href={PRIVACY}>Privacy</a>}
+              </div>
+            )}
           </div>
         </aside>
         <div className="main">
           <header className="topbar"><Search /></header>
-          {error && <div className="page"><p className="error">The API is not reachable ({error}). Start it with <code>uv run uvicorn api.main:app</code>.</p></div>}
+          {error && <div className="page"><p className="error">{STATIC
+            ? <>The data could not be loaded ({error}). Check your connection and reload the page.</>
+            : <>The API is not reachable ({error}). Start it with <code>uv run uvicorn api.main:app</code>.</>}</p></div>}
           <Routes>
             <Route path="/" element={<Overview />} />
             <Route path="/buyers" element={<Buyers />} />
@@ -123,6 +136,13 @@ export default function App() {
             <Route path="/method" element={<Method />} />
             <Route path="*" element={<div className="page"><h1>Page not found</h1><p>Use the menu or search to find a buyer or supplier.</p></div>} />
           </Routes>
+          {(IMPRINT || PRIVACY) && (
+            <footer className="legal-mobile">
+              {IMPRINT && <a href={IMPRINT}>Imprint</a>}
+              {IMPRINT && PRIVACY && ' · '}
+              {PRIVACY && <a href={PRIVACY}>Privacy</a>}
+            </footer>
+          )}
         </div>
       </div>
     </MetaContext.Provider>
