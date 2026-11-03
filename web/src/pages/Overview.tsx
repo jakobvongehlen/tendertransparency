@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useApi, type Row } from '../api'
 import { useMeta } from '../App'
 import { compact, eur, lots, num, pct } from '../format'
-import { Chart, axisCat, axisVal, base, useTokens } from '../components/Chart'
+import { Chart, axisCat, axisVal, base, legendSpace, useTokens } from '../components/Chart'
 import { BuyerLink, Loading, Panel, Stats, SupplierLink, Table, StaleNotice } from '../components/ui'
 import { Link, useSearchParams } from 'react-router-dom'
 
@@ -37,7 +37,7 @@ export default function Overview() {
     ...base(t),
     tooltip: { ...(base(t).tooltip as object), trigger: 'axis', axisPointer: { type: 'shadow' } },
     legend: { data: STATUS.map((s) => s.label), top: 0, left: 0, icon: 'roundRect', itemWidth: 10, itemHeight: 10, textStyle: { color: t.ink2 } },
-    grid: { ...(base(t).grid as object), top: 36 },
+    grid: { ...(base(t).grid as object), top: legendSpace(STATUS.map((s) => s.label)) },
     xAxis: { type: 'category', data: data.by_year.map((r: Row) => r.year), ...axisCat(t) },
     yAxis: { type: 'value', ...axisVal(t) },
     series: STATUS.map((s, i) => ({
@@ -55,7 +55,7 @@ export default function Overview() {
     ...base(t),
     tooltip: { ...(base(t).tooltip as object), trigger: 'axis', axisPointer: { type: 'shadow' },
       formatter: (p: any) => { const r = divs[p[0].dataIndex]; return `<b>${r.label}</b><br/>${lots(r.lots)} lots · ${num(r.suppliers)} suppliers · ${eur(r.value)} reported` } },
-    xAxis: { type: 'value', ...axisVal(t) },
+    xAxis: { type: 'value', ...axisVal(t), axisLabel: { show: false }, splitLine: { show: false } },
     yAxis: { type: 'category', data: divs.map((r: Row) => r.label), ...axisCat(t), axisLabel: { color: t.ink2, fontSize: 12, width: 190, overflow: 'truncate' } },
     series: [{ type: 'bar', barMaxWidth: 16, cursor: 'pointer',
       data: divs.map((r: Row) => ({ value: Math.round(r.lots), division: r.division,

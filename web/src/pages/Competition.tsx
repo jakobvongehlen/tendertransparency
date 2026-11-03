@@ -2,7 +2,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useApi, type Row } from '../api'
 import { useMeta } from '../App'
 import { bandLabel, num, pct } from '../format'
-import { Chart, axisCat, axisVal, base, useTokens } from '../components/Chart'
+import { Chart, axisCat, axisVal, base, legendSpace, legendText, useTokens } from '../components/Chart'
 import { DIRECT_AWARD_TIP, BuyerLink, FewBiddersBadge, Loading, Panel, PeerBar, PeerLegend, Stats, Table, UnusualBadge, StaleNotice } from '../components/ui'
 
 const avg = (v: number | null | undefined) => (v === null || v === undefined ? '–' : v.toFixed(1))
@@ -29,8 +29,8 @@ export default function Competition() {
 
   const trendOption = {
     ...base(t),
-    legend: { top: 0, left: 0, icon: 'roundRect', itemWidth: 12, itemHeight: 3, textStyle: { color: t.ink2 } },
-    grid: { ...(base(t).grid as object), top: 36, right: 40 },
+    legend: { top: 0, left: 0, icon: 'roundRect', itemWidth: 12, itemHeight: 3, textStyle: legendText(t) },
+    grid: { ...(base(t).grid as object), top: legendSpace(['Lots with a single tender', 'Lots awarded directly (no call for competition)']), right: 40 },
     tooltip: { ...(base(t).tooltip as object), trigger: 'axis',
       formatter: (p: any) => { const r = years[p[0].dataIndex]; return `<b>${r.year}</b><br/>Single tender: ${pct(r.single_bid_rate, 1)} of ${num(r.bid_lots)} lots with a known count<br/>Direct awards: ${pct(r.direct_share, 1)} of ${num(r.lots)} lots<br/>Tender count known for ${pct(r.bid_coverage)} of competitive lots` } },
     xAxis: { type: 'category', data: years.map((r) => r.year), ...axisCat(t) },

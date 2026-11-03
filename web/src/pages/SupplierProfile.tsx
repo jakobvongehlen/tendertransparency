@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom'
 import { useApi, type Row } from '../api'
-import { eur, lots, num, pct } from '../format'
+import { eur, lots, num, pct, place } from '../format'
 import { Chart, axisCat, axisVal, base, useTokens } from '../components/Chart'
 import { Network } from '../components/Network'
 import { BuyerLink, Comparability, Loading, NoticeLink, Panel, PeerBar, PeerLegend, ProcedureLink, Stats, Table } from '../components/ui'
@@ -27,7 +27,7 @@ export default function SupplierProfile() {
       <div className="page-head">
         <h1>{s.name}</h1>
         <p className="kicker">
-          {[s.locality, s.province, s.country !== 'Nederland' ? s.country : null].filter(Boolean).join(', ')}
+          {[place(s.locality), s.province, s.country !== 'Nederland' ? s.country : null].filter(Boolean).join(', ')}
           {s.kvk ? <> · KvK <a href={`https://www.kvk.nl/zoeken/?source=all&q=${s.kvk}`} target="_blank" rel="noreferrer">{s.kvk}</a></> : ' · no KvK number in the notices'}
           {s.sme && ' · SME'}
         </p>

@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useApi, type Row } from '../api'
 import { useMeta } from '../App'
-import { bandLabel, eur, lots, num, pct } from '../format'
-import { Chart, axisCat, axisVal, base, useTokens } from '../components/Chart'
+import { bandLabel, eur, lots, num, pct, place } from '../format'
+import { Chart, axisCat, axisVal, base, legendSpace, useTokens } from '../components/Chart'
 import { Network } from '../components/Network'
 import { CellDrilldown } from '../components/CellDrilldown'
 import {
-  Comparability, DIRECT_AWARD_TIP, FewBiddersBadge, Loading, NoticeLink, Panel, PeerBar, PeerLegend, ProcedureLink, Seg, Stats, SupplierLink, Table, UnusualBadge, StaleNotice } from '../components/ui'
+  Comparability, DIRECT_AWARD_TIP, FewBiddersBadge, Loading, NoticeLink, Panel, PeerBar, PeerLegend, ProcedureLink, ProcedureType, Seg, Stats, SupplierLink, Table, UnusualBadge, StaleNotice } from '../components/ui'
 
 export default function BuyerProfile() {
   const { id = '' } = useParams()
@@ -32,7 +32,7 @@ export default function BuyerProfile() {
     ...base(t),
     tooltip: { ...(base(t).tooltip as object), trigger: 'axis', axisPointer: { type: 'shadow' } },
     legend: { data: ['Award published', 'No award found'], top: 0, left: 0, icon: 'roundRect', itemWidth: 10, itemHeight: 10, textStyle: { color: t.ink2 } },
-    grid: { ...(base(t).grid as object), top: 36 },
+    grid: { ...(base(t).grid as object), top: legendSpace(['Award published', 'No award found']) },
     xAxis: { type: 'category', data: data.by_year.map((r: Row) => r.year), ...axisCat(t) },
     yAxis: { type: 'value', ...axisVal(t), minInterval: 1 },
     series: [
@@ -107,7 +107,7 @@ export default function BuyerProfile() {
         <Table rows={data.categories} rowKey={(r) => r.division} limit={20} highlight={(r) => r.division === drill} cols={[
           { key: 'label', label: 'Category', render: (r) => <><button className="link" onClick={() => setDrill(r.division)}>{r.label}</button><span className="sub">CPV {r.division}</span></> },
           { key: 'n_lots', label: 'Lots', num: true, render: (r) => lots(r.n_lots) },
-          { key: 'n_suppliers', label: 'Suppliers', num: true, render: (r) => <>{r.n_suppliers}{r.peer_median_suppliers != null && <span className="sub">peers {num(r.peer_median_suppliers)}</span>}</> },
+          { key: 'n_suppliers', label: 'Suppliers', num: true, render: (r) => <>{num(r.n_suppliers)}{r.peer_median_suppliers != null && <span className="sub">peers {num(r.peer_median_suppliers)}</span>}</> },
           { key: 'top_share', label: 'Share of top supplier', title: 'Share of awarded lots going to the most frequent supplier',
             render: (r) => <PeerBar value={r.top_share} median={r.peer_median_top_share} p75={r.peer_p75_top_share} /> },
           { key: 'top_supplier_name', label: 'Top supplier', render: (r) => <SupplierLink id={r.top_supplier} name={r.top_supplier_name} /> },
@@ -144,7 +144,7 @@ export default function BuyerProfile() {
         </Panel>
         <Panel title="Suppliers" note="All categories, all years. Share = share of this buyer's awarded lots.">
           <Table rows={data.suppliers} limit={10} rowKey={(r) => r.supplier_key} cols={[
-            { key: 'name', label: 'Supplier', render: (r) => <><SupplierLink id={r.supplier_key} name={r.name} /><span className="sub">{[r.locality, r.sme ? 'SME' : null].filter(Boolean).join(' · ')}</span></> },
+            { key: 'name', label: 'Supplier', render: (r) => <><SupplierLink id={r.supplier_key} name={r.name} /><span className="sub">{[place(r.locality), r.sme ? 'SME' : null].filter(Boolean).join(' · ')}</span></> },
             { key: 'lots', label: 'Lots', num: true, render: (r) => lots(r.lots) },
             { key: 'share', label: 'Share', num: true, render: (r) => pct(r.share, 1) },
             { key: 'value', label: 'Reported value', num: true, render: (r) => eur(r.value) },
@@ -185,7 +185,7 @@ export default function BuyerProfile() {
           <Table rows={gaps.data} limit={10} empty="None: every closed procedure has a published outcome." cols={[
             { key: 'first_published', label: 'First notice' },
             { key: 'title', label: 'Procedure', render: (r) => <ProcedureLink ocid={r.ocid}>{r.title}</ProcedureLink> },
-            { key: 'procedure', label: 'Procedure type', render: (r) => <>{r.procedure ?? '–'}<span className="sub">{r.scope}</span></> },
+            { key: 'procedure', label: 'Procedure type', render: (r) => <ProcedureType procedure={r.procedure} scope={r.scope} /> },
             { key: 'last_notice_id', label: 'Source', render: (r) => <NoticeLink id={r.last_notice_id} /> },
           ]} />
         )}

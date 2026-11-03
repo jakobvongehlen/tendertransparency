@@ -19,6 +19,41 @@ export const pct = (v: number | null | undefined, digits = 0) =>
 
 /** lots are fractional when shared between suppliers; show 1 decimal only when needed */
 export const lots = (v: number | null | undefined) =>
-  v === null || v === undefined ? '–' : Math.abs(v - Math.round(v)) < 0.05 ? nf.format(Math.round(v)) : v.toFixed(1)
+  v === null || v === undefined ? '–' : Math.abs(v - Math.round(v)) < 0.05 ? nf.format(Math.round(v)) : num(v, 1)
 
 export const bandLabel = (b: string | null | undefined) => (b ? b.replace(/^\d:\s*/, '') : '–')
+
+/** TenderNed procedure types in English; the Dutch term stays available as a tooltip. */
+const PROCEDURE_EN: Record<string, string> = {
+  'Openbaar': 'Open',
+  'Niet-openbaar': 'Restricted',
+  'Onderhandelingsprocedure zonder voorafgaande oproep tot mededinging': 'Negotiated, no prior call for competition',
+  'Onderhandeling zonder bekendmaking': 'Negotiated without publication',
+  'Mededingingsprocedure met onderhandeling': 'Competitive with negotiation',
+  'Concurrentiegerichte dialoog': 'Competitive dialogue',
+  'Concurrentiegerichte aanbesteding': 'Competitive tendering',
+  'Innovatiepartnerschap': 'Innovation partnership',
+  'Marktconsultatie': 'Market consultation',
+  'Onderhandse procedure': 'Invited (private) procedure',
+  'Procedure IIB diensten': 'Part IIB services',
+  'Andere procedure in één fase': 'Other single-stage procedure',
+  'Andere procedure in meerdere fasen': 'Other multi-stage procedure',
+  'Open House': 'Open house',
+}
+export const procedureLabel = (p: string | null | undefined) =>
+  !p || p === 'unknown' ? 'Type not stated' : PROCEDURE_EN[p] ?? p
+
+/** Europees / Nationaal publication regime. */
+export const scopeLabel = (s: string | null | undefined) =>
+  s === 'Europees' ? 'EU threshold' : s === 'Nationaal' ? 'National' : ''
+
+const SMALL = new Set(['aan', 'den', 'de', 'der', 'het', 'op', 'in', 'bij', 'van', 'en', 'onder', 'over'])
+/** Some notices give the place in capitals; show it like the rest ("ALBLASSERDAM" → "Alblasserdam"). */
+export function place(v: string | null | undefined) {
+  if (!v || v !== v.toUpperCase() || !/[A-Z]/.test(v)) return v ?? ''
+  return v.toLowerCase().replace(/[^\s-]+/g, (w, i: number) => {
+    if (/^'[st]$/.test(w)) return w
+    if (i > 0 && SMALL.has(w)) return w
+    return w.startsWith('ij') ? 'IJ' + w.slice(2) : w[0].toUpperCase() + w.slice(1)
+  })
+}

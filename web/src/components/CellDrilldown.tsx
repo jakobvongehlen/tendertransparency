@@ -2,10 +2,10 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useApi, type Row } from '../api'
 import { useMeta } from '../App'
-import { eur, lots, num, pct } from '../format'
-import { Chart, axisCat, axisVal, base, useTokens } from './Chart'
+import { eur, lots, num, pct, place } from '../format'
+import { Chart, axisCat, axisVal, base, legendSpace, useTokens } from './Chart'
 import {
-  Comparability, DirectAwardTag, FewBiddersBadge, Loading, NoticeLink, PeerBar, ProcedureLink, Seg, Stats, SupplierLink, Table, UnusualBadge,
+  Comparability, DirectAwardTag, FewBiddersBadge, Loading, NoticeLink, PeerBar, ProcedureLink, ProcedureType, Seg, Stats, SupplierLink, Table, UnusualBadge,
 } from './ui'
 
 type LotFilter = 'all' | 'supplier' | 'single' | 'nopub'
@@ -67,7 +67,7 @@ export function CellDrilldown({ buyerId, division, period, onClose, showBuyer = 
           <Link to={`/compare?division=${division}&kind=${encodeURIComponent(data?.buyer.kind ?? '')}&period=${period}&buyer=${encodeURIComponent(buyerId)}`}>Compare with peers</Link>
         </p>
       </div>
-      {onClose && <button className="close" onClick={onClose} aria-label="Close details">×</button>}
+      {onClose && <button className="close" onClick={onClose} aria-label="Close details"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden><path d="M1.5 1.5l9 9m0-9-9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg></button>}
     </div>
   )
 
@@ -85,7 +85,7 @@ export function CellDrilldown({ buyerId, division, period, onClose, showBuyer = 
   const timeline = {
     ...base(t),
     legend: { top: 0, left: 0, icon: 'roundRect', itemWidth: 10, itemHeight: 10, textStyle: { color: t.ink2, width: 150, overflow: 'truncate' } },
-    grid: { ...(base(t).grid as object), top: sup.length > 2 ? 52 : 32 },
+    grid: { ...(base(t).grid as object), top: legendSpace([...sup.slice(0, 4).map((r) => r.name), ...(sup.length > 4 ? ['00 other suppliers'] : [])], { maxChars: 23 }) },
     tooltip: { ...(base(t).tooltip as object), trigger: 'axis', axisPointer: { type: 'shadow' }, valueFormatter: (v: number) => lots(v) },
     xAxis: { type: 'category', data: years, ...axisCat(t) },
     yAxis: { type: 'value', ...axisVal(t), minInterval: 1 },
@@ -138,7 +138,7 @@ export function CellDrilldown({ buyerId, division, period, onClose, showBuyer = 
         <div>
           <h3>Suppliers</h3>
           <Table rows={sup} limit={8} rowKey={(r) => r.supplier_key} highlight={(r) => filter === 'supplier' && r.supplier_key === supplier} cols={[
-            { key: 'name', label: 'Supplier', render: (r) => <><SupplierLink id={r.supplier_key} name={r.name} /><span className="sub">{[r.locality, r.first_year === r.last_year ? r.first_year : `${r.first_year}–${r.last_year}`].filter(Boolean).join(' · ')}</span></> },
+            { key: 'name', label: 'Supplier', render: (r) => <><SupplierLink id={r.supplier_key} name={r.name} /><span className="sub">{[place(r.locality), r.first_year === r.last_year ? r.first_year : `${r.first_year}–${r.last_year}`].filter(Boolean).join(' · ')}</span></> },
             { key: 'lots', label: 'Lots', num: true, render: (r) => <>{lots(r.lots)}<span className="sub">{pct(r.share)}</span></> },
             { key: 'procedures', label: 'Procedures', num: true },
             { key: 'single_bid_lots', label: 'How won', title: 'Single tender · direct award (no call for competition) · framework or shared lot',
@@ -178,7 +178,7 @@ export function CellDrilldown({ buyerId, division, period, onClose, showBuyer = 
                     : r.n_bids ? <span className="tag">{r.n_bids} tenders</span> : <span className="tag muted">tenders unknown</span>}
                 {r.framework && <span className="tag">framework</span>}
               </span>
-              <span className="sub">{r.procedure ?? '–'}{r.scope === 'Europees' ? ' · EU' : ''}</span>
+              <span className="sub"><ProcedureType procedure={r.procedure} scope={r.scope} inline /></span>
             </> },
           { key: 'value', label: 'Reported value', num: true, render: (r) => eur(r.value) },
           { key: 'notice_id', label: 'Source', render: (r) => <NoticeLink id={r.notice_id} /> },
@@ -191,7 +191,7 @@ export function CellDrilldown({ buyerId, division, period, onClose, showBuyer = 
           <Table rows={data.gaps} limit={5} rowKey={(r) => r.ocid} cols={[
             { key: 'first_published', label: 'First notice' },
             { key: 'title', label: 'Procedure', render: (r) => <ProcedureLink ocid={r.ocid}>{r.title}</ProcedureLink> },
-            { key: 'procedure', label: 'Type', render: (r) => r.procedure ?? '–' },
+            { key: 'procedure', label: 'Type', render: (r) => <ProcedureType procedure={r.procedure} scope={r.scope} /> },
             { key: 'last_notice_id', label: 'Source', render: (r) => <NoticeLink id={r.last_notice_id} /> },
           ]} />
         </div>

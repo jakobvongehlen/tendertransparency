@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useApi, type Row } from '../api'
 import { useMeta } from '../App'
 import { bandLabel, eur, lots, num, pct } from '../format'
-import { Chart, axisVal, base, useTokens } from '../components/Chart'
+import { Chart, axisVal, base, legendSpace, legendText, useTokens } from '../components/Chart'
 import { CellDrilldown } from '../components/CellDrilldown'
 import { DIRECT_AWARD_TIP, BuyerLink, Comparability, FewBiddersBadge, Loading, Panel, PeerBar, Seg, Stats, SupplierLink, Table, UnusualBadge, StaleNotice } from '../components/ui'
 
@@ -35,6 +35,7 @@ export default function Compare() {
   const eligible = rows.filter((r) => r.n_lots >= 3)
   // the two views plot a different share against its own sample size
   const plotted = single ? rows.filter((r) => (r.n_bid_lots ?? 0) >= 1) : rows
+  const sel = rows.find((r) => r.buyer_id === buyer)
   const xy = (r: Row) => (single ? [r.n_bid_lots, r.single_bid_rate] : [Math.max(1, r.n_lots), r.top_share])
   const groups = single
     ? [
@@ -52,8 +53,8 @@ export default function Compare() {
     : `<b>${r.name}</b><br/>${lots(r.n_lots)} lots · ${r.n_suppliers} suppliers<br/>Top supplier ${pct(r.top_share)}: ${r.top_supplier_name ?? ''}<br/>${kind ? '' : r.kind + ', '}${bandLabel(r.size_band)}`
   const option = {
     ...base(t),
-    grid: { left: 8, right: 24, top: 44, bottom: 28, containLabel: true },
-    legend: { top: 0, left: 0, icon: 'circle', itemWidth: 10, textStyle: { color: t.ink2 } },
+    grid: { left: 8, right: 24, top: legendSpace([...groups.map((g) => g.name), ...(sel ? ['Selected buyer'] : [])], { half: false }) + 8, bottom: 28, containLabel: true },
+    legend: { top: 0, left: 0, icon: 'circle', itemWidth: 10, textStyle: legendText(t) },
     tooltip: { ...(base(t).tooltip as object), trigger: 'item',
       formatter: (p: any) => tip(p.data.r) },
     xAxis: { type: 'log', name: single ? 'Competitive lots with a known tender count (log scale)' : 'Awarded lots (log scale)', nameLocation: 'middle', nameGap: 26, nameTextStyle: { color: t.muted }, min: 1, ...axisVal(t) },
@@ -66,15 +67,17 @@ export default function Compare() {
         data: plotted.filter((r) => r.buyer_id !== buyer && g.pick(r)).map((r) => ({ value: xy(r), r })),
         emphasis: { scale: 1.6 },
       })),
-      {
+      // only in the legend when a buyer is actually highlighted
+      ...(sel ? [{
         name: 'Selected buyer', type: 'scatter', symbolSize: 16, z: 10,
         itemStyle: { color: t.ink, borderColor: t.surface, borderWidth: 2 },
-        label: { show: true, position: 'right', color: t.ink, fontSize: 12, formatter: (p: any) => p.data.r.name },
+        // name on the side with more room, so it is not cut off at the right edge
+        label: { show: true, position: Math.log(Math.max(1, xy(sel)[0])) > 0.55 * Math.log(Math.max(2, ...plotted.map((r) => xy(r)[0] ?? 1))) ? 'left' : 'right',
+          color: t.ink, fontSize: 12, textBorderColor: t.surface, textBorderWidth: 3, formatter: (p: any) => p.data.r.name },
         data: plotted.filter((r) => r.buyer_id === buyer).map((r) => ({ value: xy(r), r })),
-      },
+      }] : []),
     ],
   }
-  const sel = rows.find((r) => r.buyer_id === buyer)
 
   return (
     <div className="page">

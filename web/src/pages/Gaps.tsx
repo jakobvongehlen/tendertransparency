@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useApi, type Row } from '../api'
 import { useMeta } from '../App'
 import { num, pct } from '../format'
-import { Chart, axisCat, axisVal, base, useTokens } from '../components/Chart'
-import { BuyerLink, Loading, NoticeLink, Panel, ProcedureLink, Table, StaleNotice } from '../components/ui'
+import { Chart, axisCat, axisVal, base, legendSpace, useTokens } from '../components/Chart'
+import { BuyerLink, Loading, NoticeLink, Panel, ProcedureLink, ProcedureType, Table, StaleNotice } from '../components/ui'
 
 const QUALITY = [
   { key: 'kvk_coverage', label: 'Supplier identified by KvK number' },
@@ -21,23 +21,31 @@ export default function Gaps() {
   const cell = (y: number, s: string) => data.status_by_year.find((r: Row) => r.year === y && r.status === s)?.n ?? 0
   const rateRows = years.map((y) => {
     const closed = cell(y, 'awarded') + cell(y, 'no_award_found') + cell(y, 'terminated')
-    return { year: y, no_award: cell(y, 'no_award_found'), closed, rate: closed ? cell(y, 'no_award_found') / closed : null, recent: cell(y, 'recent') }
+    const recent = cell(y, 'recent')
+    // a year is still open when more than 5% of its procedures are under 12 months old
+    return { year: y, no_award: cell(y, 'no_award_found'), closed, rate: closed ? cell(y, 'no_award_found') / closed : null, recent, partial: recent > 0.05 * (closed + recent) }
   }).filter((r) => r.closed > 0)
 
   const rateOption = {
     ...base(t),
     tooltip: { ...(base(t).tooltip as object), trigger: 'axis', axisPointer: { type: 'shadow' },
-      formatter: (p: any) => { const r = rateRows[p[0].dataIndex]; return `<b>${r.year}</b><br/>${pct(r.rate, 1)} of ${num(r.closed)} closed procedures<br/>${num(r.no_award)} without a discoverable award` } },
+      formatter: (p: any) => {
+        const r = rateRows[p[0].dataIndex]
+        return `<b>${r.year}</b><br/>${pct(r.rate, 1)} of ${num(r.closed)} closed procedures<br/>${num(r.no_award)} without a discoverable award`
+          + (r.partial ? `<br/><span style="color:${t.muted}">${num(r.recent)} more are too recent to judge; this share will rise</span>` : '')
+      } },
     xAxis: { type: 'category', data: rateRows.map((r) => r.year), ...axisCat(t) },
     yAxis: { type: 'value', ...axisVal(t), axisLabel: { color: t.muted, formatter: (v: number) => pct(v) } },
-    series: [{ type: 'bar', barMaxWidth: 24, data: rateRows.map((r) => r.rate), itemStyle: { color: t.s2, borderRadius: [4, 4, 0, 0] },
+    series: [{ type: 'bar', barMaxWidth: 24, itemStyle: { color: t.s2, borderRadius: [4, 4, 0, 0] },
+      // years that still contain procedures under 12 months old are incomplete: paler bar
+      data: rateRows.map((r) => ({ value: r.rate, itemStyle: r.partial ? { opacity: 0.35 } : undefined })),
       label: { show: true, position: 'top', color: t.ink2, fontSize: 11, formatter: (p: any) => pct(p.value) } }],
   }
   const qualOption = {
     ...base(t),
     tooltip: { ...(base(t).tooltip as object), trigger: 'axis', valueFormatter: (v: number) => pct(v) },
     legend: { data: QUALITY.map((q) => q.label), top: 0, left: 0, icon: 'roundRect', itemWidth: 12, itemHeight: 3, textStyle: { color: t.ink2 } },
-    grid: { ...(base(t).grid as object), top: 36 },
+    grid: { ...(base(t).grid as object), top: legendSpace(QUALITY.map((q) => q.label)) },
     xAxis: { type: 'category', data: data.award_quality.map((r: Row) => r.year), ...axisCat(t) },
     yAxis: { type: 'value', min: 0, max: 1, ...axisVal(t), axisLabel: { color: t.muted, formatter: (v: number) => pct(v) } },
     series: QUALITY.map((q, i) => ({
@@ -70,9 +78,9 @@ export default function Gaps() {
       <StaleNotice error={data ? error : null} retry={retry} />
 
       <div className="grid g2">
-        <Panel title="Procedures without a discoverable award" note="Share of closed procedures (award, early termination or older than 12 months) with a contract notice but no award notice.">
+        <Panel title="Procedures without a discoverable award" note={<>Share of closed procedures (award, early termination or older than 12 months) with a contract notice but no award notice.{rateRows.some((r) => r.partial) && ' Paler bars: years with procedures still too recent to judge, so the share is not final.'}</>}>
           <Chart option={rateOption as any} height={260} table={
-            <Table rows={rateRows} cols={[{ key: 'year', label: 'Year' }, { key: 'no_award', label: 'No award found', num: true }, { key: 'closed', label: 'Closed', num: true }, { key: 'rate', label: 'Share', num: true, render: (r) => pct(r.rate, 1) }]} />
+            <Table rows={rateRows} cols={[{ key: 'year', label: 'Year' }, { key: 'no_award', label: 'No award found', num: true }, { key: 'closed', label: 'Closed', num: true }, { key: 'rate', label: 'Share', num: true, render: (r) => pct(r.rate, 1) }, { key: 'recent', label: 'Too recent to judge', num: true }]} />
           } />
         </Panel>
         <Panel title="Quality of published awards" note="Share of awarded lots. Supplier identity includes names matched to a KvK number found in other notices.">
@@ -94,7 +102,7 @@ export default function Gaps() {
         </Panel>
         <Panel title="By procedure type" note="Procedure types with at least 50 closed procedures.">
           <Table rows={data.by_scope} cols={[
-            { key: 'procedure', label: 'Procedure', render: (r) => <>{r.procedure}<span className="sub">{r.scope === 'Europees' ? 'EU threshold' : r.scope === 'Nationaal' ? 'National' : r.scope}</span></> },
+            { key: 'procedure', label: 'Procedure', render: (r) => <ProcedureType procedure={r.procedure} scope={r.scope} /> },
             { key: 'no_award', label: 'No award found', num: true, render: (r) => num(r.no_award) },
             { key: 'rate', label: 'Share', num: true, render: (r) => pct(r.no_award / r.closed, 1), sort: (r) => r.no_award / r.closed },
           ]} initialSort={{ key: 'no_award', dir: -1 }} />
@@ -115,7 +123,7 @@ export default function Gaps() {
           { key: 'first_published', label: 'First notice' },
           { key: 'title', label: 'Procedure', render: (r) => <ProcedureLink ocid={r.ocid}>{r.title}</ProcedureLink> },
           { key: 'buyer_name', label: 'Buyer', render: (r) => <BuyerLink id={r.buyer_id} name={r.buyer_name} /> },
-          { key: 'procedure', label: 'Type', render: (r) => <>{r.procedure ?? '–'}<span className="sub">{r.scope}</span></> },
+          { key: 'procedure', label: 'Type', render: (r) => <ProcedureType procedure={r.procedure} scope={r.scope} /> },
           { key: 'last_notice_id', label: 'Source', render: (r) => <NoticeLink id={r.last_notice_id} /> },
         ]} />
       </Panel>

@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { useApi } from '../api'
 import { eur, num } from '../format'
-import { BuyerLink, Loading, NoticeLink, Panel, Stats, SupplierLink, Table } from '../components/ui'
+import { BuyerLink, Loading, NoticeLink, Panel, ProcedureType, Stats, SupplierLink, Table } from '../components/ui'
 
 const STATUS: Record<string, string> = {
   awarded: 'Award published', no_award_found: 'No award found', terminated: 'Stopped early', recent: 'Too recent to judge',
@@ -17,7 +17,7 @@ export default function Procedure() {
     <div className="page">
       <div className="page-head">
         <h1>{p.title}</h1>
-        <p className="kicker"><BuyerLink id={p.buyer_id} name={p.buyer_name} /> · {p.procedure ?? 'procedure type unknown'} · {p.scope === 'Europees' ? 'EU threshold' : 'National'}</p>
+        <p className="kicker"><BuyerLink id={p.buyer_id} name={p.buyer_name} /> · <ProcedureType procedure={p.procedure} scope={p.scope} inline /></p>
       </div>
       <Stats items={[
         { label: 'Outcome', value: STATUS[p.status] ?? p.status },

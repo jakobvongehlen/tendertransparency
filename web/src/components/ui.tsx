@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { pct } from '../format'
-import type { Row } from '../api'
+import { num, pct, procedureLabel, scopeLabel } from '../format'
+import { STATIC, type Row } from '../api'
 
 export const NOTICE_URL = 'https://www.tenderned.nl/aankondigingen/overzicht/'
 
@@ -46,10 +46,18 @@ export function SupplierLink({ id, name }: { id: string; name: string }) {
 }
 export function NoticeLink({ id, children }: { id: number | string; children?: ReactNode }) {
   return (
-    <a href={NOTICE_URL + id} target="_blank" rel="noreferrer" title="Open the notice on TenderNed">
-      {children ?? 'Notice'} <span aria-hidden>↗</span>
+    <a className="nowrap" href={NOTICE_URL + id} target="_blank" rel="noreferrer" title="Open the notice on TenderNed">
+      {children ?? 'Notice'}&nbsp;<span aria-hidden>↗</span>
     </a>
   )
+}
+
+/** Procedure type in English (Dutch term on hover), with the EU/national regime underneath. */
+export function ProcedureType({ procedure, scope, inline = false }: { procedure?: string | null; scope?: string | null; inline?: boolean }) {
+  const s = scopeLabel(scope)
+  const name = <span title={procedure && procedure !== 'unknown' ? procedure : undefined}>{procedureLabel(procedure)}</span>
+  if (inline) return <>{name}{s && ` · ${s}`}</>
+  return <>{name}{s && <span className="sub">{s}</span>}</>
 }
 export function ProcedureLink({ ocid, children }: { ocid: string; children: ReactNode }) {
   return <Link to={`/procedures/${encodeURIComponent(ocid)}`}>{children}</Link>
@@ -167,12 +175,19 @@ export function Table({ rows, cols, initialSort, limit = 25, rowKey, highlight, 
             {cols.map((c) => (
               <th
                 key={c.key}
-                className={`${c.num ? 'num' : ''} sortable`}
+                className={c.num ? 'num' : undefined}
                 title={c.title}
-                onClick={() => setSort((s) => ({ key: c.key, dir: s?.key === c.key ? (s.dir === 1 ? -1 : 1) : c.num ? -1 : 1 }))}
-                aria-sort={sort?.key === c.key ? (sort.dir === 1 ? 'ascending' : 'descending') : 'none'}
+                aria-sort={sort?.key === c.key ? (sort.dir === 1 ? 'ascending' : 'descending') : undefined}
               >
-                {c.label}{sort?.key === c.key ? (sort.dir === 1 ? ' ▲' : ' ▼') : ''}
+                {c.label === '' ? null : (
+                  <button type="button" className="th-sort"
+                    onClick={() => setSort((s) => ({ key: c.key, dir: s?.key === c.key ? (s.dir === 1 ? -1 : 1) : c.num ? -1 : 1 }))}>
+                    {c.label}
+                    <svg className={sort?.key === c.key ? 'on' : undefined} width="8" height="10" viewBox="0 0 8 10" aria-hidden>
+                      {sort?.key === c.key && sort.dir === 1 ? <path d="M4 1 7.5 6h-7z" /> : sort?.key === c.key ? <path d="M4 9 .5 4h7z" /> : <path d="M4 1 7 4.5H1zM4 9 1 5.5h6z" />}
+                    </svg>
+                  </button>
+                )}
               </th>
             ))}
           </tr>
@@ -181,7 +196,7 @@ export function Table({ rows, cols, initialSort, limit = 25, rowKey, highlight, 
           {sorted.slice(0, shown).map((r, i) => (
             <tr key={rowKey ? rowKey(r, i) : i} className={highlight?.(r) ? 'hl' : ''}>
               {cols.map((c) => (
-                <td key={c.key} className={c.num ? 'num' : /published$/.test(c.key) ? 'nowrap' : ''}>{c.render ? c.render(r) : r[c.key] ?? '–'}</td>
+                <td key={c.key} className={c.num ? 'num' : /published$/.test(c.key) ? 'nowrap' : ''}>{c.render ? c.render(r) : c.num && Number.isInteger(r[c.key]) ? num(r[c.key]) : r[c.key] ?? '–'}</td>
               ))}
             </tr>
           ))}
@@ -223,5 +238,12 @@ export function StaleNotice({ error, retry }: { error?: string | null; retry: ()
 }
 
 export function Loading({ error }: { error?: string | null }) {
-  return error ? <p className="error">Could not load data: {error}. Is the API running on port 8000?</p> : <p className="loading">Loading…</p>
+  if (!error) return <p className="loading" role="status">Loading…</p>
+  return (
+    <p className="error" role="alert">
+      {/\b404\b|not found/i.test(error)
+        ? <>Nothing in the data matches this address ({error}). Use the search above or the menu to find a buyer or supplier.</>
+        : <>Could not load data ({error}). {STATIC ? 'Check your connection and reload the page.' : 'Is the API running on port 8000?'}</>}
+    </p>
+  )
 }

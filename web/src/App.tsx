@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, createContext, useContext } from 'react'
 import { NavLink, Route, Routes, useNavigate, useLocation } from 'react-router-dom'
 import { getJSON, onWaiting, useApi, type Meta, type Row, STATIC } from './api'
-import { num } from './format'
+import { num, place } from './format'
 import Overview from './pages/Overview'
 import Buyers from './pages/Buyers'
 import BuyerProfile from './pages/BuyerProfile'
@@ -79,7 +79,7 @@ function Search() {
   const items = res
     ? [
         ...res.buyers.map((b) => ({ to: `/buyers/${encodeURIComponent(b.buyer_id)}`, name: b.name, sub: `${b.kind} · ${num(b.n_procedures)} procedures`, group: 'Buyers' })),
-        ...res.suppliers.map((s) => ({ to: `/suppliers/${encodeURIComponent(s.supplier_key)}`, name: s.name, sub: `${s.locality ?? ''}${s.kvk ? ` · KvK ${s.kvk}` : ''}`, group: 'Suppliers' })),
+        ...res.suppliers.map((s) => ({ to: `/suppliers/${encodeURIComponent(s.supplier_key)}`, name: s.name, sub: [place(s.locality), s.kvk ? `KvK ${s.kvk}` : null].filter(Boolean).join(' · '), group: 'Suppliers' })),
       ]
     : []
 
@@ -87,8 +87,13 @@ function Search() {
     <div className="search" ref={box}>
       <input
         type="search"
-        placeholder="Search a buyer or supplier, or type a KvK number"
-        aria-label="Search buyers and suppliers"
+        placeholder="Search buyers, suppliers or a KvK number"
+        aria-label="Search buyers and suppliers, or type a KvK number"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-controls="search-results"
+        aria-expanded={Boolean(open && res)}
+        aria-activedescendant={open && items[sel] ? `search-opt-${sel}` : undefined}
         value={q}
         onChange={(e) => { setQ(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
@@ -100,12 +105,12 @@ function Search() {
         }}
       />
       {open && res && (
-        <div className="results" role="listbox">
-          {items.length === 0 && <div className="group">No buyer or supplier matches “{q}”.</div>}
+        <div className="results" role="listbox" id="search-results" aria-label="Search results">
+          {items.length === 0 && <div className="group" role="presentation">No buyer or supplier matches “{q}”.</div>}
           {items.map((it, i) => (
-            <div key={it.to}>
-              {(i === 0 || items[i - 1].group !== it.group) && <div className="group">{it.group}</div>}
-              <a className={`item ${i === sel ? 'sel' : ''}`} href={it.to} role="option" aria-selected={i === sel}
+            <div key={it.to} role="presentation">
+              {(i === 0 || items[i - 1].group !== it.group) && <div className="group" role="presentation">{it.group}</div>}
+              <a id={`search-opt-${i}`} className={`item ${i === sel ? 'sel' : ''}`} href={it.to} role="option" aria-selected={i === sel}
                 onClick={(e) => { e.preventDefault(); nav(it.to) }} onMouseEnter={() => setSel(i)}>
                 <span>{it.name}</span><span>{it.sub}</span>
               </a>
