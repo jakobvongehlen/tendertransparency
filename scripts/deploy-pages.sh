@@ -10,9 +10,13 @@ cd "$(dirname "$0")/.."
 # legal links shown in the dashboard footer (leave empty to hide)
 export VITE_IMPRINT_URL="${VITE_IMPRINT_URL-https://jakobvongehlen.me/imprint.html}"
 export VITE_PRIVACY_URL="${VITE_PRIVACY_URL-https://jakobvongehlen.me/privacy.html#tender-transparency}"
+# custom domain for GitHub Pages (empty = serve under <user>.github.io/tendertransparency/)
+PAGES_DOMAIN="${PAGES_DOMAIN-tender.jakobvongehlen.me}"
+if [ -n "$PAGES_DOMAIN" ]; then export BASE=/; fi
 (cd web && pnpm build:static)
 TMP=$(mktemp -d)
 cp -R web/dist/. "$TMP/"
+if [ -n "$PAGES_DOMAIN" ]; then echo "$PAGES_DOMAIN" > "$TMP/CNAME"; fi
 cd "$TMP"
 git init -q -b gh-pages
 git add -A
