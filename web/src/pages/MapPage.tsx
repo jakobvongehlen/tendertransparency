@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import * as echarts from 'echarts'
-import { getJSON, useApi, type Row } from '../api'
+import { getJSON, useApi, STATIC, type Row } from '../api'
 import { useMeta } from '../App'
 import { bandLabel, lots, num, pct } from '../format'
 import { Chart, base, useTokens } from '../components/Chart'
@@ -32,7 +32,7 @@ const METRICS: Metric[] = [
     fmt: (v) => num(v), enough: () => true, sample: (r) => `${num(r.n_lots)} awarded lots` },
   { key: 'local_share', label: 'Won by suppliers from the municipality', note: 'Share of awarded lots won by suppliers registered in the same municipality.',
     fmt: (v) => pct(v), enough: (r) => r.n_lots >= 5, sample: (r) => `${num(r.n_lots)} awarded lots` },
-  { key: 'no_award_rate', label: 'No award found', note: 'Share of closed procedures without a discoverable award notice.',
+  { key: 'no_award_rate', label: 'No award found', note: 'Share of closed procedures with no award notice found.',
     fmt: (v) => pct(v), enough: (r) => r.n_closed >= 5, sample: (r) => `${num(r.n_closed)} closed procedures` },
   { key: 'lots_per_10k', label: 'Awarded lots per 10,000 residents', note: 'Published purchasing activity relative to population.',
     fmt: (v) => v.toFixed(1), enough: (r) => r.population > 0, sample: (r) => `${num(r.n_lots)} lots, ${num(r.population)} residents` },
@@ -155,7 +155,7 @@ export default function MapPage() {
           note={<>{metric.note} {values.length > 0 && <>Shown for {num(values.length)} municipalities; median {metric.fmt(median!)}.</>} Scroll or pinch to zoom; click a municipality for details.</>}
           className={loading ? 'stale' : ''}
         >
-          {geoError ? <p className="error">Municipal boundaries could not be loaded ({geoError}). Run <code>etl/enrich.py</code>.</p>
+          {geoError ? <p className="error">Municipal boundaries could not be loaded ({geoError}). {STATIC ? 'Reload the page to try again; the table view still works.' : <>Run <code>etl/enrich.py</code>.</>}</p>
             : !data || !geoReady ? <Loading error={error} /> : (
               <Chart option={option as any} height={narrow ? 440 : 620}
                 onEvents={{ click: (p: any) => setSelected(p.data?.r ? p.data.r.code : '') }}
@@ -176,7 +176,7 @@ export default function MapPage() {
                 <dt>Single tender</dt><dd>{sel.n_bid_lots >= 5 ? pct(sel.single_bid_rate) : '–'}{sel.n_bid_lots >= 5 && sel.peer_median_single_bid != null && <span className="muted"> · peers {pct(sel.peer_median_single_bid)}</span>}</dd>
                 <dt>Tenders per lot</dt><dd>{sel.n_bid_lots >= 5 ? sel.avg_bids?.toFixed(1) : '–'}</dd>
                 <dt title={DIRECT_AWARD_TIP}>Direct awards</dt><dd>{pct(sel.direct_share)}</dd>
-                <dt>Local suppliers</dt><dd>{pct(sel.local_share)}</dd>
+                <dt>Suppliers from the municipality</dt><dd>{pct(sel.local_share)}</dd>
                 <dt>No award found</dt><dd>{pct(sel.no_award_rate)}</dd>
                 {division
                   ? <><dt>Top-supplier share</dt><dd>{pct(sel.top_share)}</dd></>
@@ -187,7 +187,7 @@ export default function MapPage() {
                 {division ? (sel.unusual && <UnusualBadge />) : sel.n_unusual > 0 && <UnusualBadge />}
                 {division && sel.comparability && <Comparability value={sel.comparability} />}
               </div>
-              <p style={{ marginTop: 12 }}><Link to={`/buyers/${encodeURIComponent(sel.buyer_id)}`}>Open profile →</Link></p>
+              <p style={{ marginTop: 12 }}><Link to={`/buyers/${encodeURIComponent(sel.buyer_id)}`}>Open buyer profile</Link></p>
             </Panel>
           ) : (
             <Panel title="Details">

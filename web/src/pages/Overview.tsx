@@ -97,10 +97,10 @@ export default function Overview() {
       <Stats items={[
         { label: 'Procedures', value: num(k.procedures), note: `${num(k.awarded_procedures)} with a published award` },
         { label: 'Awarded lots', value: compact(k.lots), note: 'each lot counts once, shared between winners' },
-        { label: 'Buyers awarding', value: num(k.buyers) },
+        { label: 'Buyers with awards', value: num(k.buyers) },
         { label: 'Winning suppliers', value: num(k.suppliers) },
         { label: 'Reported award value', value: eur(k.value_known), note: `known for ${pct(k.value_coverage)} of lots` },
-        { label: 'No award found', value: pct(k.no_award_found / k.closed_procedures), note: `${num(k.no_award_found)} closed procedures`, },
+        { label: 'No award found', value: pct(k.no_award_found / k.closed_procedures), note: `${num(k.no_award_found)} of ${num(k.closed_procedures)} closed procedures` },
       ]} />
 
       <div className="grid g2">

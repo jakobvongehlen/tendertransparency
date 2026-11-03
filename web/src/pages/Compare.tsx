@@ -85,13 +85,13 @@ export default function Compare() {
       <div className="page-head">
         <h1>Compare similar buyers</h1>
         <p className="lede">
-          Pick a category and a type of buyer. Each dot is one buyer: how many lots it awarded in the category and what share went to
-          its most frequent supplier, or, in the competition view, what share drew only a single tender. Buyers with only a few lots
-          naturally have more extreme shares, so compare dots at similar horizontal positions.
+          Pick a category and a type of buyer. Each dot is one buyer: across, how many lots it awarded in the category; up, what
+          share went to its most frequent supplier (or, with Single tenders selected, what share drew only one tender). Buyers with
+          few lots naturally have more extreme shares, so compare dots at similar horizontal positions.
         </p>
       </div>
       <div className="filters">
-        <label>Compare
+        <label>Measure
           <Seg label="Measure" value={single ? 'single' : 'share'} onChange={(v) => set('metric', v === 'single' ? 'single' : '')}
             options={[{ value: 'share', label: 'Top-supplier share' }, { value: 'single', label: 'Single tenders' }]} />
         </label>
@@ -169,7 +169,7 @@ export default function Compare() {
               : `All buyer types are shown together; the “${single ? 'few bidders' : 'unusual'}” flag still compares each buyer only with buyers of its own type and size band.`}</p>
           </Panel>
           {sel && <CellDrilldown buyerId={buyer} division={division} period={period} scrollOnOpen={jump} onClose={() => set('buyer', '')} />}
-          <Panel title="All buyers in this comparison" note="Click a buyer's row to see the lots behind its figures.">
+          <Panel title="All buyers in this comparison" note="Click a buyer's name to see the lots behind its figures; “profile” opens its full buyer page.">
             <Table rows={rows} limit={30} rowKey={(r) => r.buyer_id} highlight={(r) => r.buyer_id === buyer} initialSort={{ key: 'n_lots', dir: -1 }} cols={[
               { key: 'name', label: 'Buyer', render: (r) => <><button className="link" onClick={() => pick(r.buyer_id)}>{r.name}</button><span className="sub">{[kind ? null : r.kind, r.province, bandLabel(r.size_band)].filter(Boolean).join(' · ')} · <BuyerLink id={r.buyer_id} name="profile" /></span></> },
               { key: 'n_lots', label: 'Lots', num: true, render: (r) => lots(r.n_lots) },
@@ -186,7 +186,7 @@ export default function Compare() {
                 { key: 'top_supplier_name', label: 'Top supplier', render: (r: Row) => r.top_supplier ? <SupplierLink id={r.top_supplier} name={r.top_supplier_name} /> : '–' },
               ]),
               ...(single ? [] : [{ key: 'value_known', label: 'Reported value', num: true, render: (r: Row) => eur(r.value_known) }]),
-              { key: 'no_award_rate', label: 'No award found', num: true, render: (r) => pct(r.no_award_rate), title: 'Share of closed procedures in this category without a discoverable award' },
+              { key: 'no_award_rate', label: 'No award found', num: true, render: (r) => pct(r.no_award_rate), title: 'Share of closed procedures in this category with no award found' },
               { key: 'comparability', label: 'Comparison', render: (r) => <div className="row">{r.few_bidders && <FewBiddersBadge />}{r.unusual && <UnusualBadge persistent={r.persistent_periods} />}<Comparability value={r.comparability} /></div>,
                 sort: (r) => (single ? (r.few_bidders ? 0 : 4) : 0) + (r.unusual ? 0 : 1) + (r.comparability === 'comparable' ? 0 : 2) },
             ]} />

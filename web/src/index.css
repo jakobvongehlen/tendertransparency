@@ -243,7 +243,7 @@ tr.hl td { background: var(--surface-2); }
 tbody tr:hover td { background: var(--surface-2); }
 td .sub { display: block; color: var(--muted); font-size: var(--fs-meta); }
 /* name columns with a second line: keep them from collapsing to two-word lines */
-td:not(.num):has(> .sub) { min-width: 12rem; }
+td:first-child:not(.num):has(> .sub) { min-width: 12rem; }
 .more { margin-top: 10px; font-size: var(--fs-caption); color: var(--muted); }
 button.link { background: none; border: 0; padding: 0; color: var(--link); font: inherit; cursor: pointer; text-align: left; }
 

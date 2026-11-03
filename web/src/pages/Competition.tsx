@@ -73,9 +73,10 @@ export default function Competition() {
       <div className="page-head">
         <h1>Competition</h1>
         <p className="lede">
-          How many firms tendered for each lot. A lot that draws only one tender leaves the buyer
-          no choice, and a direct award, where the buyer negotiates with a company of its choosing without announcing the contract, involves no open competition at all. Both have ordinary causes,
-          such as niche markets, urgent work and follow-up assignments, so compare with similar buyers first.
+          How many firms tendered for each lot. A lot that draws only one tender leaves the buyer no choice. A direct award
+          involves no open competition at all: the buyer negotiates with a company of its choosing without announcing the
+          contract. Both have ordinary causes, such as niche markets, urgent work and follow-up assignments, so compare with
+          similar buyers first.
         </p>
       </div>
       <div className="filters">
@@ -137,7 +138,7 @@ export default function Competition() {
           { key: 'few_bidders', label: 'Flags', render: (r) => <div className="row">{r.few_bidders && <FewBiddersBadge />}{r.unusual && <UnusualBadge />}</div>,
             sort: (r) => (r.few_bidders ? 0 : 2) + (r.unusual ? 0 : 1) },
           { key: 'go', label: '', render: (r) => division && r.kind
-            ? <Link to={`/compare?division=${division}&kind=${encodeURIComponent(r.kind)}&period=${period}&metric=single&buyer=${encodeURIComponent(r.buyer_id)}`}>Peers</Link> : null },
+            ? <Link to={`/compare?division=${division}&kind=${encodeURIComponent(r.kind)}&period=${period}&metric=single&buyer=${encodeURIComponent(r.buyer_id)}`} aria-label={`Compare ${r.name} with peers in ${label?.toLowerCase()}`}>Compare</Link> : null },
         ]} />
       </Panel>
 

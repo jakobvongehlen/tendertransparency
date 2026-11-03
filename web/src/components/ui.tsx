@@ -69,7 +69,7 @@ export function Comparability({ value }: { value: string | null | undefined }) {
   const cls = v === 'comparable' ? 'good' : v === 'limited data' ? 'warn' : 'neutral'
   const tip: Record<string, string> = {
     comparable: 'Enough awards, enough peers and complete enough data to compare.',
-    'limited data': 'Many suppliers lack a KvK number or many procedures have no discoverable award.',
+    'limited data': 'Many suppliers lack a KvK number, or many procedures have no award found.',
     'small sample': 'Fewer than 5 awarded lots or fewer than 3 separate procedures in this category and period.',
     'too few peers': 'Fewer than 5 comparable buyers in this category and period.',
     'fewer than 3 awards': 'Too few awards to compare with peers.',

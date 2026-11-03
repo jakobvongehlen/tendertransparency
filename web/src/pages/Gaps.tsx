@@ -31,7 +31,7 @@ export default function Gaps() {
     tooltip: { ...(base(t).tooltip as object), trigger: 'axis', axisPointer: { type: 'shadow' },
       formatter: (p: any) => {
         const r = rateRows[p[0].dataIndex]
-        return `<b>${r.year}</b><br/>${pct(r.rate, 1)} of ${num(r.closed)} closed procedures<br/>${num(r.no_award)} without a discoverable award`
+        return `<b>${r.year}</b><br/>${pct(r.rate, 1)} of ${num(r.closed)} closed procedures<br/>${num(r.no_award)} with no award found`
           + (r.partial ? `<br/><span style="color:${t.muted}">${num(r.recent)} more are too recent to judge; this share will rise</span>` : '')
       } },
     xAxis: { type: 'category', data: rateRows.map((r) => r.year), ...axisCat(t) },
@@ -78,7 +78,7 @@ export default function Gaps() {
       <StaleNotice error={data ? error : null} retry={retry} />
 
       <div className="grid g2">
-        <Panel title="Procedures without a discoverable award" note={<>Share of closed procedures (award, early termination or older than 12 months) with a contract notice but no award notice.{rateRows.some((r) => r.partial) && ' Paler bars: years with procedures still too recent to judge, so the share is not final.'}</>}>
+        <Panel title="Procedures with no award found" note={<>Share of closed procedures (award, early termination or older than 12 months) with a contract notice but no award notice.{rateRows.some((r) => r.partial) && ' Paler bars: years with procedures still too recent to judge, so the share is not final.'}</>}>
           <Chart option={rateOption as any} height={260} table={
             <Table rows={rateRows} cols={[{ key: 'year', label: 'Year' }, { key: 'no_award', label: 'No award found', num: true }, { key: 'closed', label: 'Closed', num: true }, { key: 'rate', label: 'Share', num: true, render: (r) => pct(r.rate, 1) }, { key: 'recent', label: 'Too recent to judge', num: true }]} />
           } />
@@ -109,7 +109,7 @@ export default function Gaps() {
         </Panel>
       </div>
 
-      <Panel title="Buyers with the most procedures lacking an outcome" note="Buyers with at least 10 closed procedures.">
+      <Panel title="Buyers with the most procedures with no award found" note="Buyers with at least 10 closed procedures.">
         <Table rows={data.worst_buyers} limit={15} cols={[
           { key: 'name', label: 'Buyer', render: (r) => <><BuyerLink id={r.buyer_id} name={r.name} /><span className="sub">{r.kind}</span></> },
           { key: 'no_award', label: 'No award found', num: true },
@@ -118,7 +118,7 @@ export default function Gaps() {
         ]} />
       </Panel>
 
-      <Panel title="Most recent procedures without a discoverable award" note="Check the notice on TenderNed: the outcome may have been published elsewhere or under a different reference.">
+      <Panel title="Most recent procedures with no award found" note="Check the notice on TenderNed: the outcome may have been published elsewhere or under a different reference.">
         <Table rows={data.missing} limit={20} cols={[
           { key: 'first_published', label: 'First notice' },
           { key: 'title', label: 'Procedure', render: (r) => <ProcedureLink ocid={r.ocid}>{r.title}</ProcedureLink> },

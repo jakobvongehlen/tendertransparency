@@ -75,7 +75,8 @@ export default function BuyerProfile() {
       {fewBidders.length > 0 && (
         <div className="callout">
           In {fewBidders.length} {fewBidders.length === 1 ? 'category' : 'categories'} at least half of the competitive lots drew a single
-          tender, well above comparable buyers. See the competition view below.
+          tender, well above comparable buyers.{' '}
+          {view !== 'competition' && <button className="link" onClick={() => setView('competition')}>Show the competition view</button>}
         </div>
       )}
 
@@ -101,7 +102,7 @@ export default function BuyerProfile() {
             { key: 'direct_share', label: 'Direct award', num: true, title: DIRECT_AWARD_TIP, render: (r) => <>{pct(r.direct_share)}{r.peer_median_direct_share != null && <span className="sub">peers {pct(r.peer_median_direct_share)}</span>}</> },
             { key: 'few_bidders', label: 'Flags', render: (r) => <div className="row">{r.few_bidders && <FewBiddersBadge />}{r.unusual && <UnusualBadge persistent={r.persistent_periods} />}</div>,
               sort: (r) => (r.few_bidders ? 0 : 2) + (r.unusual ? 0 : 1) },
-            { key: 'go', label: '', render: (r) => <Link to={`/compare?division=${r.division}&kind=${encodeURIComponent(b.kind)}&period=${period === 'all' ? '2022-2024' : period}&metric=single&buyer=${encodeURIComponent(b.buyer_id)}`}>Peers</Link> },
+            { key: 'go', label: '', render: (r) => <Link to={`/compare?division=${r.division}&kind=${encodeURIComponent(b.kind)}&period=${period === 'all' ? '2022-2024' : period}&metric=single&buyer=${encodeURIComponent(b.buyer_id)}`} aria-label={`Compare ${b.name} with peers in ${r.label.toLowerCase()}`}>Compare</Link> },
           ]} />
         ) : (
         <Table rows={data.categories} rowKey={(r) => r.division} limit={20} highlight={(r) => r.division === drill} cols={[
@@ -113,7 +114,7 @@ export default function BuyerProfile() {
           { key: 'top_supplier_name', label: 'Top supplier', render: (r) => <SupplierLink id={r.top_supplier} name={r.top_supplier_name} /> },
           { key: 'comparability', label: 'Comparison', render: (r) => <div className="row">{r.unusual && <UnusualBadge persistent={r.persistent_periods} />}<Comparability value={r.comparability} /></div>,
             sort: (r) => (r.unusual ? 0 : 1) + (r.comparability === 'comparable' ? 0 : 2) },
-          { key: 'go', label: '', render: (r) => <Link to={`/compare?division=${r.division}&kind=${encodeURIComponent(b.kind)}&period=${period === 'all' ? '2022-2024' : period}&buyer=${encodeURIComponent(b.buyer_id)}`}>Peers</Link> },
+          { key: 'go', label: '', render: (r) => <Link to={`/compare?division=${r.division}&kind=${encodeURIComponent(b.kind)}&period=${period === 'all' ? '2022-2024' : period}&buyer=${encodeURIComponent(b.buyer_id)}`} aria-label={`Compare ${b.name} with peers in ${r.label.toLowerCase()}`}>Compare</Link> },
         ]} />
         )}
         <p className="small muted" style={{ marginTop: 8 }}>Click a category to see its suppliers and lots.</p>
@@ -180,7 +181,7 @@ export default function BuyerProfile() {
         )}
       </Panel>
 
-      <Panel title="Procedures without a discoverable award" note="Contract notice published more than a year before the data cutoff, but no award notice or early-termination notice found.">
+      <Panel title="Procedures with no award found" note="Contract notice published more than a year before the data cutoff, but no award notice or early-termination notice found. The outcome may have been published elsewhere.">
         {!gaps.data ? <Loading error={gaps.error} /> : (
           <Table rows={gaps.data} limit={10} empty="None: every closed procedure has a published outcome." cols={[
             { key: 'first_published', label: 'First notice' },

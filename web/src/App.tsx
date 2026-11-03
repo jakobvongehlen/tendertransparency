@@ -106,7 +106,7 @@ function Search() {
       />
       {open && res && (
         <div className="results" role="listbox" id="search-results" aria-label="Search results">
-          {items.length === 0 && <div className="group" role="presentation">No buyer or supplier matches “{q}”.</div>}
+          {items.length === 0 && <div className="group" role="presentation">No buyer or supplier matches “{q}”. Try part of the name, or an 8-digit KvK number.</div>}
           {items.map((it, i) => (
             <div key={it.to} role="presentation">
               {(i === 0 || items[i - 1].group !== it.group) && <div className="group" role="presentation">{it.group}</div>}

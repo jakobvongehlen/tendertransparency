@@ -74,8 +74,8 @@ export default function Patterns() {
               <span className="sub">{r.supplier_province ? (r.supplier_province === r.province ? 'same province' : r.supplier_province) : ''}</span></> },
             { key: 'n_peers', label: 'Peers', num: true },
             { key: 'persistent_periods', label: 'Periods', num: true, title: 'Number of three-year periods with this supplier on top (≥50% share)' },
-            { key: 'comparability', label: 'Data', render: (r) => <><Comparability value={r.comparability} /><span className="sub">KvK {pct(r.kvk_coverage)} · no award {pct(r.no_award_rate)}</span></> },
-            { key: 'go', label: '', render: (r) => <Link to={`/compare?division=${r.division}&kind=${encodeURIComponent(r.kind)}&period=${r.period}&size_band=${encodeURIComponent(r.size_band)}&buyer=${encodeURIComponent(r.buyer_id)}`}>Investigate</Link> },
+            { key: 'comparability', label: 'Data quality', render: (r) => <><Comparability value={r.comparability} /><span className="sub">KvK {pct(r.kvk_coverage)} · no award {pct(r.no_award_rate)}</span></> },
+            { key: 'go', label: '', render: (r) => <Link to={`/compare?division=${r.division}&kind=${encodeURIComponent(r.kind)}&period=${r.period}&size_band=${encodeURIComponent(r.size_band)}&buyer=${encodeURIComponent(r.buyer_id)}`} aria-label={`Compare ${r.buyer_name} with peers in ${r.label.toLowerCase()}`}>Compare</Link> },
           ]} />
         )}
       </Panel>

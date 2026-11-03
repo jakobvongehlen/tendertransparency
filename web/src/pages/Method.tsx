@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom'
+import { STATIC } from '../api'
+import { useMeta } from '../App'
 
 export default function Method() {
+  const meta = useMeta()
   return (
     <div className="page">
       <div className="prose">
@@ -21,7 +24,7 @@ export default function Method() {
 
         <h2>Units</h2>
         <ul>
-          <li><b>Procedure</b>: all notices about one tender. Award notices that arrived under a new reference (common for notices imported from Mercell) are re-attached when buyer and title or buyer reference match and the award follows within three years.</li>
+          <li><b>Procedure</b>: all notices about one tendering procedure. Award notices that arrived under a new reference (common for notices imported from Mercell) are re-attached when buyer and title or buyer reference match and the award follows within three years.</li>
           <li><b>Awarded lot</b>: each lot counts once. When a lot goes to several suppliers (framework agreements, open-house admission procedures), each supplier gets an equal fraction. This stops a single admission procedure with 300 care providers from dominating the counts.</li>
           <li><b>Buyer</b>: the organisation as registered on TenderNed. Departments that name a municipality (“Gemeente Amsterdam, afdeling ICT”) are combined into that municipality.</li>
           <li><b>Supplier</b>: identified by KvK number. Before 2024 many notices only give a name; a name is matched to a KvK number when the exact name appears with exactly one KvK number elsewhere. Unmatched spelling variants of one company show up as separate suppliers, which makes concentration look lower, not higher.</li>
@@ -32,7 +35,7 @@ export default function Method() {
         <ul>
           <li><b>Top-supplier share</b>: share of a buyer's awarded lots in a category and period that went to its most frequent supplier. <b>HHI</b> is the sum of squared supplier shares (1 = a single supplier).</li>
           <li><b>Peers</b>: buyers of the same type and size band that bought in the same category in the same three-year period. Municipalities are sized by population (CBS); other buyers by how many procedures they publish (low, medium, high within their type).</li>
-          <li><b>Comparability</b>: a comparison is marked <i>comparable</i> only with at least 5 awarded lots from at least 3 separate procedures, at least 5 peers, at least 60% of lots with an identified supplier, and at most 30% of procedures lacking a discoverable award.</li>
+          <li><b>Comparability</b>: a comparison is marked <i>comparable</i> only with at least 5 awarded lots from at least 3 separate procedures, at least 5 peers, at least 60% of lots with an identified supplier, and at most 30% of procedures with no award found.</li>
           <li><b>Unusual</b>: comparable, the top supplier won at least half the lots, the concentration (HHI) is in the top 10% of peers, and the top-supplier share is at least 20 percentage points above the peer median. <i>Periods</i> counts the three-year periods in which the same supplier held at least half the lots.</li>
         </ul>
         <p>
@@ -72,7 +75,8 @@ export default function Method() {
 
         <h2>Refreshing the data</h2>
         <p>
-          TenderNed publishes a new dataset every six months. Stop the API and run <code>./setup.sh --no-web</code>.
+          TenderNed publishes a new dataset every six months{meta && <>; this version includes notices up to {meta.cutoff}</>}.
+          {!STATIC && <> To refresh a local copy, stop the API and run <code>./setup.sh --no-web</code>.</>}
         </p>
 
         <h2>Disclaimer</h2>

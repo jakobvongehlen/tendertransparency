@@ -32,7 +32,7 @@ function observations(d: Row): ReactNode[] {
   if (top.framework_lots > 0) how.push(`${top.framework_lots} under a framework agreement or shared with other winners`)
   if (how.length) out.push(<>For {top.name}: {how.join('; ')}.</>)
   if (s.persistent_periods >= 2) out.push(<>The same supplier held at least half the lots in <b>{s.persistent_periods} three-year periods</b>.</>)
-  if (d.gaps.length > 0) out.push(<>{d.gaps.length} {d.gaps.length === 1 ? 'procedure' : 'procedures'} in this category {d.gaps.length === 1 ? 'has' : 'have'} no discoverable award, so the picture may be incomplete.</>)
+  if (d.gaps.length > 0) out.push(<>{d.gaps.length} {d.gaps.length === 1 ? 'procedure' : 'procedures'} in this category {d.gaps.length === 1 ? 'has' : 'have'} no award found, so the picture may be incomplete.</>)
   if (s.kvk_coverage != null && s.kvk_coverage < 0.6) out.push(<>Only {pct(s.kvk_coverage)} of suppliers are identified by KvK number; name variants of one company may be counted separately.</>)
   return out
 }
@@ -146,7 +146,7 @@ export function CellDrilldown({ buyerId, division, period, onClose, showBuyer = 
                 r.single_bid_lots ? `${r.single_bid_lots} single tender` : null,
                 r.no_publication_lots ? `${r.no_publication_lots} direct award` : null,
                 r.framework_lots ? `${r.framework_lots} framework` : null,
-              ].filter(Boolean).join(' · ') || <span className="muted">competed</span>}</span> },
+              ].filter(Boolean).join(' · ') || <span className="muted">{r.bid_lots > 0 ? 'competed' : 'tender count unknown'}</span>}</span> },
             { key: 'show', label: '', render: (r) => <button className="link small nowrap" onClick={() => pickSupplier(r.supplier_key)}>Show lots</button> },
           ]} />
         </div>
@@ -187,7 +187,7 @@ export function CellDrilldown({ buyerId, division, period, onClose, showBuyer = 
 
       {data.gaps.length > 0 && (
         <div className="drill-lots">
-          <h3>Procedures in this category without a discoverable award</h3>
+          <h3>Procedures in this category with no award found</h3>
           <Table rows={data.gaps} limit={5} rowKey={(r) => r.ocid} cols={[
             { key: 'first_published', label: 'First notice' },
             { key: 'title', label: 'Procedure', render: (r) => <ProcedureLink ocid={r.ocid}>{r.title}</ProcedureLink> },
