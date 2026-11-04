@@ -5,7 +5,7 @@
     "buyers": 2091,
     "suppliers": 31630,
     "lots": 104505.0,
-    "value_known": 194987786891.42667,
+    "value_known": 194987786891.4279,
     "value_coverage": 41.3,
     "value_known_bn": 195.0
   },
@@ -744,18 +744,18 @@
       "median_span_days": 35.0
     },
     {
-      "kind": "Water authority",
-      "flags": 2,
-      "within_90_days": 0,
-      "within_90_days_one_procedure": 0,
-      "median_span_days": 195.5
-    },
-    {
       "kind": "Joint arrangement",
       "flags": 2,
       "within_90_days": 2,
       "within_90_days_one_procedure": 2,
       "median_span_days": 0.0
+    },
+    {
+      "kind": "Water authority",
+      "flags": 2,
+      "within_90_days": 0,
+      "within_90_days_one_procedure": 0,
+      "median_span_days": 195.5
     },
     {
       "kind": "Other public body",
