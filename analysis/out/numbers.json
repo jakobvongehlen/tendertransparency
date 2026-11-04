@@ -1,0 +1,952 @@
+{
+  "cutoff": "2026-06-30",
+  "kpis": {
+    "procedures": 127550,
+    "buyers": 2091,
+    "suppliers": 31630,
+    "lots": 104505.0,
+    "value_known": 194987786891.42667,
+    "value_coverage": 41.3,
+    "value_known_bn": 195.0
+  },
+  "bidders_by_year": [
+    {
+      "year": 2016,
+      "lots": 3049,
+      "one": 13.1,
+      "two": 14.8,
+      "three_to_five": 43.8,
+      "six_plus": 28.4,
+      "median_bids": 4.0,
+      "one_single_lot_procs": 14.9,
+      "six_plus_single_lot_procs": 25.2
+    },
+    {
+      "year": 2017,
+      "lots": 6664,
+      "one": 11.3,
+      "two": 17.5,
+      "three_to_five": 43.4,
+      "six_plus": 27.8,
+      "median_bids": 4.0,
+      "one_single_lot_procs": 11.7,
+      "six_plus_single_lot_procs": 26.9
+    },
+    {
+      "year": 2018,
+      "lots": 8373,
+      "one": 13.8,
+      "two": 18.5,
+      "three_to_five": 40.4,
+      "six_plus": 27.3,
+      "median_bids": 4.0,
+      "one_single_lot_procs": 14.0,
+      "six_plus_single_lot_procs": 27.1
+    },
+    {
+      "year": 2019,
+      "lots": 8445,
+      "one": 13.2,
+      "two": 17.7,
+      "three_to_five": 42.2,
+      "six_plus": 26.8,
+      "median_bids": 4.0,
+      "one_single_lot_procs": 13.1,
+      "six_plus_single_lot_procs": 27.8
+    },
+    {
+      "year": 2020,
+      "lots": 8674,
+      "one": 13.0,
+      "two": 16.7,
+      "three_to_five": 40.9,
+      "six_plus": 29.4,
+      "median_bids": 4.0,
+      "one_single_lot_procs": 12.5,
+      "six_plus_single_lot_procs": 30.7
+    },
+    {
+      "year": 2021,
+      "lots": 10042,
+      "one": 13.8,
+      "two": 18.5,
+      "three_to_five": 39.4,
+      "six_plus": 28.4,
+      "median_bids": 4.0,
+      "one_single_lot_procs": 14.8,
+      "six_plus_single_lot_procs": 26.4
+    },
+    {
+      "year": 2022,
+      "lots": 11059,
+      "one": 17.7,
+      "two": 22.6,
+      "three_to_five": 39.4,
+      "six_plus": 20.4,
+      "median_bids": 3.0,
+      "one_single_lot_procs": 19.3,
+      "six_plus_single_lot_procs": 19.4
+    },
+    {
+      "year": 2023,
+      "lots": 10539,
+      "one": 17.2,
+      "two": 21.2,
+      "three_to_five": 38.9,
+      "six_plus": 22.6,
+      "median_bids": 3.0,
+      "one_single_lot_procs": 17.1,
+      "six_plus_single_lot_procs": 22.1
+    },
+    {
+      "year": 2024,
+      "lots": 7796,
+      "one": 19.8,
+      "two": 22.0,
+      "three_to_five": 40.9,
+      "six_plus": 17.3,
+      "median_bids": 3.0,
+      "one_single_lot_procs": 21.8,
+      "six_plus_single_lot_procs": 15.5
+    },
+    {
+      "year": 2025,
+      "lots": 8970,
+      "one": 18.6,
+      "two": 21.9,
+      "three_to_five": 41.8,
+      "six_plus": 17.7,
+      "median_bids": 3.0,
+      "one_single_lot_procs": 18.9,
+      "six_plus_single_lot_procs": 17.3
+    }
+  ],
+  "one_bid_by_half_year": [
+    {
+      "half": "2020-H1",
+      "lots": 4311,
+      "one": 13.3,
+      "six_plus": 28.4
+    },
+    {
+      "half": "2020-H2",
+      "lots": 4363,
+      "one": 12.8,
+      "six_plus": 30.3
+    },
+    {
+      "half": "2021-H1",
+      "lots": 5208,
+      "one": 11.8,
+      "six_plus": 31.6
+    },
+    {
+      "half": "2021-H2",
+      "lots": 4834,
+      "one": 15.8,
+      "six_plus": 25.0
+    },
+    {
+      "half": "2022-H1",
+      "lots": 5475,
+      "one": 16.3,
+      "six_plus": 19.9
+    },
+    {
+      "half": "2022-H2",
+      "lots": 5584,
+      "one": 19.0,
+      "six_plus": 20.9
+    },
+    {
+      "half": "2023-H1",
+      "lots": 5243,
+      "one": 17.4,
+      "six_plus": 20.6
+    },
+    {
+      "half": "2023-H2",
+      "lots": 5296,
+      "one": 17.1,
+      "six_plus": 24.6
+    }
+  ],
+  "bidders_pooled": [
+    {
+      "per": "before",
+      "lots": 45247,
+      "one": 13.1,
+      "six_plus": 28.0,
+      "median_bids": 4.0
+    },
+    {
+      "per": "after",
+      "lots": 38364,
+      "one": 18.2,
+      "six_plus": 19.8,
+      "median_bids": 3.0
+    }
+  ],
+  "one_bid_mix_adjusted": [
+    {
+      "year": 2016,
+      "one": 15.9
+    },
+    {
+      "year": 2017,
+      "one": 11.2
+    },
+    {
+      "year": 2018,
+      "one": 13.7
+    },
+    {
+      "year": 2019,
+      "one": 13.0
+    },
+    {
+      "year": 2020,
+      "one": 13.2
+    },
+    {
+      "year": 2021,
+      "one": 13.3
+    },
+    {
+      "year": 2022,
+      "one": 17.5
+    },
+    {
+      "year": 2023,
+      "one": 17.7
+    },
+    {
+      "year": 2024,
+      "one": 20.2
+    },
+    {
+      "year": 2025,
+      "one": 18.3
+    }
+  ],
+  "one_bid_buyer_level": {
+    "buyers_30_lots_each_period": 235,
+    "of_which_rose": 180,
+    "without_top10_before": 13.5,
+    "without_top10_after": 17.5
+  },
+  "one_bid_by_category": [
+    {
+      "division": "34",
+      "label": "Transport equipment & vehicles",
+      "lots": 2942,
+      "before": 18.8,
+      "after": 28.2
+    },
+    {
+      "division": "48",
+      "label": "Software & information systems",
+      "lots": 2053,
+      "before": 21.7,
+      "after": 27.6
+    },
+    {
+      "division": "72",
+      "label": "IT services",
+      "lots": 3407,
+      "before": 17.4,
+      "after": 21.6
+    },
+    {
+      "division": "66",
+      "label": "Financial & insurance services",
+      "lots": 2375,
+      "before": 14.4,
+      "after": 21.5
+    },
+    {
+      "division": "77",
+      "label": "Agricultural, forestry & horticultural services",
+      "lots": 4689,
+      "before": 8.4,
+      "after": 20.9
+    },
+    {
+      "division": "30",
+      "label": "Office & computing equipment",
+      "lots": 3087,
+      "before": 12.3,
+      "after": 19.5
+    },
+    {
+      "division": "50",
+      "label": "Repair & maintenance",
+      "lots": 2831,
+      "before": 11.4,
+      "after": 19.3
+    },
+    {
+      "division": "79",
+      "label": "Business services (legal, consulting, staffing)",
+      "lots": 20608,
+      "before": 11.7,
+      "after": 17.9
+    },
+    {
+      "division": "85",
+      "label": "Health & social work",
+      "lots": 2996,
+      "before": 16.9,
+      "after": 17.4
+    },
+    {
+      "division": "90",
+      "label": "Waste, sewage & environmental services",
+      "lots": 6228,
+      "before": 13.2,
+      "after": 17.0
+    },
+    {
+      "division": "71",
+      "label": "Architecture, engineering & inspection",
+      "lots": 5044,
+      "before": 8.6,
+      "after": 11.8
+    },
+    {
+      "division": "45",
+      "label": "Construction work",
+      "lots": 7791,
+      "before": 6.3,
+      "after": 10.1
+    }
+  ],
+  "one_bid_by_buyer_type": [
+    {
+      "kind": "Municipality",
+      "lots": 34264,
+      "before": 11.5,
+      "after": 17.2
+    },
+    {
+      "kind": "Education",
+      "lots": 13519,
+      "before": 14.4,
+      "after": 18.0
+    },
+    {
+      "kind": "Central government",
+      "lots": 10654,
+      "before": 14.8,
+      "after": 18.7
+    },
+    {
+      "kind": "Other public body",
+      "lots": 7974,
+      "before": 15.8,
+      "after": 21.8
+    },
+    {
+      "kind": "Water authority",
+      "lots": 4388,
+      "before": 11.6,
+      "after": 16.8
+    },
+    {
+      "kind": "Utility / public enterprise",
+      "lots": 3840,
+      "before": 10.6,
+      "after": 16.1
+    },
+    {
+      "kind": "Joint arrangement",
+      "lots": 2945,
+      "before": 17.2,
+      "after": 20.0
+    },
+    {
+      "kind": "Province",
+      "lots": 2847,
+      "before": 9.7,
+      "after": 15.6
+    },
+    {
+      "kind": "Health",
+      "lots": 1847,
+      "before": 12.7,
+      "after": 24.5
+    },
+    {
+      "kind": "Safety region",
+      "lots": 1327,
+      "before": 21.9,
+      "after": 22.8
+    }
+  ],
+  "direct_by_year": [
+    {
+      "year": 2016,
+      "lots": 5090,
+      "direct": 3.3
+    },
+    {
+      "year": 2017,
+      "lots": 7552,
+      "direct": 5.6
+    },
+    {
+      "year": 2018,
+      "lots": 8818,
+      "direct": 4.5
+    },
+    {
+      "year": 2019,
+      "lots": 8942,
+      "direct": 5.0
+    },
+    {
+      "year": 2020,
+      "lots": 9354,
+      "direct": 7.2
+    },
+    {
+      "year": 2021,
+      "lots": 11007,
+      "direct": 8.6
+    },
+    {
+      "year": 2022,
+      "lots": 12278,
+      "direct": 9.8
+    },
+    {
+      "year": 2023,
+      "lots": 12048,
+      "direct": 11.6
+    },
+    {
+      "year": 2024,
+      "lots": 11045,
+      "direct": 12.4
+    },
+    {
+      "year": 2025,
+      "lots": 11094,
+      "direct": 14.3
+    }
+  ],
+  "direct_pooled": {
+    "before": 6.0,
+    "after": 12.0
+  },
+  "direct_by_category": [
+    {
+      "division": "48",
+      "label": "Software & information systems",
+      "direct_lots_after": 312,
+      "before": 10.4,
+      "after": 28.8
+    },
+    {
+      "division": "80",
+      "label": "Education & training",
+      "direct_lots_after": 179,
+      "before": 8.7,
+      "after": 25.4
+    },
+    {
+      "division": "33",
+      "label": "Medical equipment & pharmaceuticals",
+      "direct_lots_after": 256,
+      "before": 20.9,
+      "after": 36.3
+    },
+    {
+      "division": "38",
+      "label": "Laboratory & precision instruments",
+      "direct_lots_after": 468,
+      "before": 46.0,
+      "after": 61.2
+    },
+    {
+      "division": "72",
+      "label": "IT services",
+      "direct_lots_after": 541,
+      "before": 10.7,
+      "after": 22.8
+    },
+    {
+      "division": "60",
+      "label": "Transport services",
+      "direct_lots_after": 75,
+      "before": 3.5,
+      "after": 14.9
+    },
+    {
+      "division": "50",
+      "label": "Repair & maintenance",
+      "direct_lots_after": 244,
+      "before": 7.1,
+      "after": 14.7
+    },
+    {
+      "division": "85",
+      "label": "Health & social work",
+      "direct_lots_after": 333,
+      "before": 10.7,
+      "after": 17.8
+    },
+    {
+      "division": "34",
+      "label": "Transport equipment & vehicles",
+      "direct_lots_after": 180,
+      "before": 4.9,
+      "after": 11.8
+    },
+    {
+      "division": "75",
+      "label": "Public administration & social security",
+      "direct_lots_after": 94,
+      "before": 5.0,
+      "after": 11.8
+    },
+    {
+      "division": "66",
+      "label": "Financial & insurance services",
+      "direct_lots_after": 130,
+      "before": 5.1,
+      "after": 10.4
+    },
+    {
+      "division": "90",
+      "label": "Waste, sewage & environmental services",
+      "direct_lots_after": 209,
+      "before": 2.5,
+      "after": 7.0
+    },
+    {
+      "division": "71",
+      "label": "Architecture, engineering & inspection",
+      "direct_lots_after": 269,
+      "before": 5.3,
+      "after": 9.5
+    },
+    {
+      "division": "39",
+      "label": "Furniture & household goods",
+      "direct_lots_after": 59,
+      "before": 2.3,
+      "after": 6.3
+    },
+    {
+      "division": "79",
+      "label": "Business services (legal, consulting, staffing)",
+      "direct_lots_after": 738,
+      "before": 2.9,
+      "after": 6.2
+    },
+    {
+      "division": "45",
+      "label": "Construction work",
+      "direct_lots_after": 385,
+      "before": 8.0,
+      "after": 10.0
+    },
+    {
+      "division": "77",
+      "label": "Agricultural, forestry & horticultural services",
+      "direct_lots_after": 66,
+      "before": 1.5,
+      "after": 2.5
+    },
+    {
+      "division": "30",
+      "label": "Office & computing equipment",
+      "direct_lots_after": 73,
+      "before": 4.0,
+      "after": 4.6
+    }
+  ],
+  "direct_by_buyer_type": [
+    {
+      "kind": "Municipality",
+      "lots": 42708,
+      "before": 3.2,
+      "after": 9.3
+    },
+    {
+      "kind": "Education",
+      "lots": 16787,
+      "before": 7.9,
+      "after": 15.0
+    },
+    {
+      "kind": "Central government",
+      "lots": 13803,
+      "before": 12.2,
+      "after": 18.3
+    },
+    {
+      "kind": "Other public body",
+      "lots": 9724,
+      "before": 4.8,
+      "after": 9.2
+    },
+    {
+      "kind": "Water authority",
+      "lots": 5341,
+      "before": 3.1,
+      "after": 11.2
+    },
+    {
+      "kind": "Utility / public enterprise",
+      "lots": 4865,
+      "before": 8.3,
+      "after": 18.3
+    },
+    {
+      "kind": "Joint arrangement",
+      "lots": 3599,
+      "before": 3.4,
+      "after": 5.7
+    },
+    {
+      "kind": "Province",
+      "lots": 3503,
+      "before": 4.1,
+      "after": 11.6
+    },
+    {
+      "kind": "Health",
+      "lots": 2578,
+      "before": 10.9,
+      "after": 20.3
+    },
+    {
+      "kind": "Safety region",
+      "lots": 1589,
+      "before": 5.1,
+      "after": 12.5
+    }
+  ],
+  "cells": [
+    {
+      "comparability": "small sample",
+      "cells": 2597
+    },
+    {
+      "comparability": "comparable",
+      "cells": 2320
+    },
+    {
+      "comparability": "too few peers",
+      "cells": 1931
+    },
+    {
+      "comparability": "limited data",
+      "cells": 1362
+    }
+  ],
+  "flags": {
+    "cells": 8210,
+    "comparable": 2320,
+    "unusual": 61,
+    "buyers_flagged": 57,
+    "comparable_pct": 28.3,
+    "unusual_pct_of_comparable": 2.6
+  },
+  "flags_by_buyer_type": [
+    {
+      "kind": "Education",
+      "comparable": 353,
+      "unusual": 26
+    },
+    {
+      "kind": "Municipality",
+      "comparable": 1171,
+      "unusual": 19
+    },
+    {
+      "kind": "Central government",
+      "comparable": 306,
+      "unusual": 8
+    },
+    {
+      "kind": "Health",
+      "comparable": 37,
+      "unusual": 3
+    },
+    {
+      "kind": "Water authority",
+      "comparable": 158,
+      "unusual": 2
+    },
+    {
+      "kind": "Joint arrangement",
+      "comparable": 60,
+      "unusual": 2
+    },
+    {
+      "kind": "Other public body",
+      "comparable": 145,
+      "unusual": 1
+    },
+    {
+      "kind": "Utility / public enterprise",
+      "comparable": 80,
+      "unusual": 0
+    },
+    {
+      "kind": "Safety region",
+      "comparable": 10,
+      "unusual": 0
+    },
+    {
+      "kind": "Province",
+      "comparable": 0,
+      "unusual": 0
+    }
+  ],
+  "flags_batch": [
+    {
+      "kind": "All",
+      "flags": 61,
+      "within_90_days": 32,
+      "within_90_days_one_procedure": 12,
+      "median_span_days": 71.0
+    },
+    {
+      "kind": "Education",
+      "flags": 26,
+      "within_90_days": 12,
+      "within_90_days_one_procedure": 0,
+      "median_span_days": 261.5
+    },
+    {
+      "kind": "Municipality",
+      "flags": 19,
+      "within_90_days": 12,
+      "within_90_days_one_procedure": 7,
+      "median_span_days": 2.0
+    },
+    {
+      "kind": "Central government",
+      "flags": 8,
+      "within_90_days": 3,
+      "within_90_days_one_procedure": 3,
+      "median_span_days": 202.5
+    },
+    {
+      "kind": "Health",
+      "flags": 3,
+      "within_90_days": 3,
+      "within_90_days_one_procedure": 0,
+      "median_span_days": 35.0
+    },
+    {
+      "kind": "Water authority",
+      "flags": 2,
+      "within_90_days": 0,
+      "within_90_days_one_procedure": 0,
+      "median_span_days": 195.5
+    },
+    {
+      "kind": "Joint arrangement",
+      "flags": 2,
+      "within_90_days": 2,
+      "within_90_days_one_procedure": 2,
+      "median_span_days": 0.0
+    },
+    {
+      "kind": "Other public body",
+      "flags": 1,
+      "within_90_days": 0,
+      "within_90_days_one_procedure": 0,
+      "median_span_days": 481.0
+    }
+  ],
+  "flags_record_errors": [
+    {
+      "buyer_id": "161955419",
+      "division": "79",
+      "period": "2022-2024",
+      "buyer": "Stichting NHL Stenden Hogeschool",
+      "top_supplier": "NHL Stenden Hogeschool",
+      "kvk": "41002686"
+    },
+    {
+      "buyer_id": "1829383",
+      "division": "79",
+      "period": "2022-2024",
+      "buyer": "GGD Zaanstreek-Waterland",
+      "top_supplier": "GGD Zaanstreek - Waterland",
+      "kvk": "34370893"
+    },
+    {
+      "buyer_id": "222072340",
+      "division": "79",
+      "period": "2022-2024",
+      "buyer": "Stichting Participatiefonds voor het Onderwijs",
+      "top_supplier": "Stichting Vervangingsfonds en Participatiefonds",
+      "kvk": "41134697"
+    },
+    {
+      "buyer_id": "381687890",
+      "division": "79",
+      "period": "2025-2026",
+      "buyer": "Technische Universiteit Eindhoven",
+      "top_supplier": "Gemeente Amersfoort",
+      "kvk": "12345678"
+    },
+    {
+      "buyer_id": "GM:GM0307",
+      "division": "66",
+      "period": "2022-2024",
+      "buyer": "Gemeente Amersfoort",
+      "top_supplier": "Gemeente Amersfoort",
+      "kvk": "12345678"
+    },
+    {
+      "buyer_id": "GM:GM1911",
+      "division": "79",
+      "period": "2025-2026",
+      "buyer": "Gemeente Hollands Kroon",
+      "top_supplier": "Gemeente Hollands Kroon",
+      "kvk": "54477506"
+    }
+  ],
+  "persistence": [
+    {
+      "n_periods": 1,
+      "buyer_category_pairs": 6634
+    },
+    {
+      "n_periods": 2,
+      "buyer_category_pairs": 200
+    },
+    {
+      "n_periods": 3,
+      "buyer_category_pairs": 9
+    }
+  ],
+  "suppliers": {
+    "suppliers": 31630,
+    "top10_share": 3.2,
+    "top100_share": 15.6,
+    "at_most_one_lot_weighted_pct": 63.0,
+    "exactly_one_distinct_lot_pct": 54.5
+  },
+  "placeholder_kvk_12345678": {
+    "names": 13,
+    "awards": 169
+  },
+  "local_by_municipality_size": [
+    {
+      "size_band": "1: < 25k residents",
+      "lots": 2549.0,
+      "local": 4.1,
+      "same_province": 41.7
+    },
+    {
+      "size_band": "2: 25k-50k residents",
+      "lots": 7616.0,
+      "local": 6.6,
+      "same_province": 38.1
+    },
+    {
+      "size_band": "3: 50k-100k residents",
+      "lots": 11117.0,
+      "local": 9.4,
+      "same_province": 38.9
+    },
+    {
+      "size_band": "4: 100k+ residents",
+      "lots": 20016.0,
+      "local": 16.5,
+      "same_province": 43.2
+    }
+  ],
+  "record_by_year": [
+    {
+      "year": 2016,
+      "procedures": 10338,
+      "no_award_found": 9.2,
+      "kvk": 67.9,
+      "value_known": 33.3
+    },
+    {
+      "year": 2017,
+      "procedures": 9256,
+      "no_award_found": 10.1,
+      "kvk": 71.2,
+      "value_known": 46.0
+    },
+    {
+      "year": 2018,
+      "procedures": 9808,
+      "no_award_found": 8.1,
+      "kvk": 76.4,
+      "value_known": 43.7
+    },
+    {
+      "year": 2019,
+      "procedures": 9966,
+      "no_award_found": 7.3,
+      "kvk": 75.4,
+      "value_known": 34.2
+    },
+    {
+      "year": 2020,
+      "procedures": 10526,
+      "no_award_found": 7.1,
+      "kvk": 74.4,
+      "value_known": 36.0
+    },
+    {
+      "year": 2021,
+      "procedures": 12087,
+      "no_award_found": 9.3,
+      "kvk": 77.3,
+      "value_known": 43.2
+    },
+    {
+      "year": 2022,
+      "procedures": 13464,
+      "no_award_found": 7.7,
+      "kvk": 76.6,
+      "value_known": 39.1
+    },
+    {
+      "year": 2023,
+      "procedures": 14047,
+      "no_award_found": 12.2,
+      "kvk": 80.0,
+      "value_known": 48.0
+    },
+    {
+      "year": 2024,
+      "procedures": 15108,
+      "no_award_found": 12.9,
+      "kvk": 95.3,
+      "value_known": 29.6
+    },
+    {
+      "year": 2025,
+      "procedures": 14542,
+      "no_award_found": 6.6,
+      "kvk": 95.5,
+      "value_known": 49.4
+    },
+    {
+      "year": 2026,
+      "procedures": 8408,
+      "no_award_found": 0.0,
+      "kvk": 96.5,
+      "value_known": 50.4
+    }
+  ],
+  "estimate_equals_award": {
+    "awards": 5913,
+    "equal_pct": 60.2
+  }
+}
