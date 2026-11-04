@@ -324,30 +324,30 @@ def figures(n):
     years = [r["year"] for r in by]
     one_ = [r["one"] for r in by]
     six = [r["six_plus"] for r in by]
-    tips = [f"{r['year']}\nOne tender: {pct(r['one'])}\nSix or more: {pct(r['six_plus'])}\n{r['lots']:,} lots" for r in by]
+    tips = [f"{r['year']}\nOne bid: {pct(r['one'])}\nSix or more: {pct(r['six_plus'])}\n{r['lots']:,} lots" for r in by]
     figs["bidders"] = figure(
-        "fig-bidders", "Since 2022, one tender is about as common as six or more",
-        "Share of competitively tendered lots by number of tenders received, by year of award",
-        legend([("s1", "One tender"), ("s2", "Six or more tenders")]) + "\n" + line_chart(
-            years, [{"cls": "s1", "label": "One tender", "values": one_},
+        "fig-bidders", "Lots with a single bid are now as common as lots with six or more",
+        "Share of competitively tendered lots by number of bids received, by year of award",
+        legend([("s1", "One bid"), ("s2", "Six or more bids")]) + "\n" + line_chart(
+            years, [{"cls": "s1", "label": "One bid", "values": one_},
                     {"cls": "s2", "label": "Six or more", "values": six}],
             35, [0, 10, 20, 30], tips, inline_labels=[(1, 1, "above"), (0, 1, "below")])
-        + "\n" + data_table(["Year", "Lots", "One tender", "Two", "3–5", "Six or more", "Median"],
+        + "\n" + data_table(["Year", "Lots", "One bid", "Two", "3–5", "Six or more", "Median bids"],
                             [[r["year"], f"{r['lots']:,}", pct(r["one"]), pct(r["two"]), pct(r["three_to_five"]),
                               pct(r["six_plus"]), f"{r['median_bids']:g}"] for r in by]),
-        "Awarded lots with a known tender count, excluding direct awards. 2026 (January to June) not shown. "
+        "Awarded lots with a known bid count, excluding direct awards. 2026 (January to June) not shown. "
         "Source: TenderNed open data, own processing.")
 
     cats = n["one_bid_by_category"]
     figs["categories"] = figure(
-        "fig-categories", "Single tenders became more common in almost every large category",
-        "Share of competitively tendered lots that received one tender",
+        "fig-categories", "Single bids became more common in almost every large category",
+        "Share of competitively tendered lots that received one bid",
         dumbbell([{"label": c["label"], "a": c["before"], "b": c["after"],
                    "tip": f"{c['label']}\n{BEFORE[0]}–{BEFORE[1]}: {pct(c['before'])}\n{AFTER[0]}–{AFTER[1]}: {pct(c['after'])}\n{c['lots']:,} lots"}
                   for c in cats], 30, [0, 10, 20, 30], f"{BEFORE[0]}–{BEFORE[1]}", f"{AFTER[0]}–{AFTER[1]}")
         + "\n" + data_table(["Category (CPV division)", "Lots", f"{BEFORE[0]}–{BEFORE[1]}", f"{AFTER[0]}–{AFTER[1]}"],
                             [[f"{c['label']} ({c['division']})", f"{c['lots']:,}", pct(c["before"]), pct(c["after"])] for c in cats]),
-        "The twelve categories with at least 2,000 lots with a known tender count. Source: TenderNed open data, own processing.")
+        "The twelve categories with at least 2,000 lots with a known bid count. Source: TenderNed open data, own processing.")
 
     d = n["direct_by_year"]
     figs["direct"] = figure(
