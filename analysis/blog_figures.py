@@ -171,6 +171,23 @@ def compute(con):
         FROM flags f JOIN buyers b USING (buyer_id) JOIN suppliers s ON s.supplier_key = f.top_supplier
         WHERE f.unusual AND (f.buyer_id, f.division, f.period) IN ({", ".join(f"('{b}', '{d}', '{p}')" for b, d, p in FLAG_ERRORS)})
         ORDER BY 1""")
+    # the 61 flags split into: record errors, one round of purchasing (within 90 days, not an error), the rest
+    errs = ", ".join(f"('{b}', '{d}', '{p}')" for b, d, p in FLAG_ERRORS)
+    n["flags_explained"] = one(con, f"""
+        WITH f AS (SELECT * FROM flags WHERE unusual AND period <> 'all'),
+        p AS (SELECT * FROM (VALUES ('2016-2018', 2016, 2018), ('2019-2021', 2019, 2021), ('2022-2024', 2022, 2024),
+                                    ('2025-2026', 2025, 2026)) t(period, y0, y1)),
+        a AS (SELECT f.buyer_id, f.division, f.period, max(a.published) - min(a.published) AS span_days
+              FROM f JOIN p USING (period)
+              JOIN awards a ON a.buyer_id = f.buyer_id AND a.division = f.division AND a.supplier_key = f.top_supplier
+                           AND a.year BETWEEN p.y0 AND p.y1
+              GROUP BY ALL),
+        c AS (SELECT *, (buyer_id, division, period) IN ({errs}) AS error FROM a)
+        SELECT count(*) AS flags, count(*) FILTER (WHERE error) AS record_errors,
+          count(*) FILTER (WHERE error AND span_days <= 90) AS errors_within_90_days,
+          count(*) FILTER (WHERE NOT error AND span_days <= 90) AS one_round_not_error,
+          count(*) FILTER (WHERE NOT error AND span_days > 90) AS remaining
+        FROM c""")
     n["persistence"] = rows(con, """
         SELECT n_periods, count(*) AS buyer_category_pairs FROM persistence GROUP BY 1 ORDER BY 1""")
 
