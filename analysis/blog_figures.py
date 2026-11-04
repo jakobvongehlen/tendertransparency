@@ -382,7 +382,7 @@ def figures(n):
     order = ["comparable", "too few peers", "limited data", "small sample"]  # the order the tests are applied in
     cells = sorted(n["cells"], key=lambda c: order.index(c["comparability"]))
     figs["cells"] = figure(
-        "fig-cells", "Most combinations of buyer and category can't be judged",
+        "fig-cells", "Most buyer–category combinations can't be judged",
         f"{total:,} combinations of buyer, category and three-year period with at least 3 awarded lots",
         hbars([{"label": labels[c["comparability"]], "value": c["cells"],
                 "display": f"{c['cells']:,} · {100 * c['cells'] / total:.0f}%",
