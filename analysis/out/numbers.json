@@ -5,7 +5,7 @@
     "buyers": 2091,
     "suppliers": 31630,
     "lots": 104505.0,
-    "value_known": 194987786891.4279,
+    "value_known": 194987786891.42667,
     "value_coverage": 41.3,
     "value_known_bn": 195.0
   },
@@ -815,6 +815,13 @@
       "kvk": "54477506"
     }
   ],
+  "flags_explained": {
+    "flags": 61,
+    "record_errors": 6,
+    "errors_within_90_days": 4,
+    "one_round_not_error": 28,
+    "remaining": 27
+  },
   "persistence": [
     {
       "n_periods": 1,
